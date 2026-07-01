@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "strict": true
+  },
+  "fmt": {
+    "include": ["bin/", "src/", "tests/", "docs/core-skeleton.md", "deno.json"]
+  },
+  "lint": {
+    "include": ["bin/", "src/", "tests/"]
+  },
+  "tasks": {
+    "check": "deno check bin/la.ts",
+    "fmt": "deno fmt",
+    "lint": "deno lint",
+    "test": "deno test --allow-read --allow-env",
+    "config-check": "deno run --allow-read --allow-env bin/la.ts config-check --config examples/la.v2.json",
+    "commands": "deno run --allow-read --allow-env bin/la.ts commands --config examples/la.v2.json",
+    "quick": "deno run --allow-read --allow-env bin/la.ts quick --config examples/la.v2.json"
+  }
+}
