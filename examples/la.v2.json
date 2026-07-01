@@ -1,0 +1,327 @@
+{
+  "version": 2,
+  "providers": {
+    "google-ai-studio": {
+      "api_style": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "api_key_env": "GOOGLE_AI_STUDIO_API_KEY",
+      "api_key": "",
+      "models": {
+        "gemini-2.5-flash": "gemini-2.5-flash-preview-04-17",
+        "gemini-2.0-flash": "gemini-2.0-flash",
+        "gemini-2.0-flash-lite": "gemini-2.0-flash-lite-preview-02-05"
+      }
+    },
+    "openrouter": {
+      "api_style": "openai",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "api_key": "",
+      "models": {
+        "deepseek-chat-v3": "deepseek/deepseek-chat-v3-0324:free",
+        "deepseek-r1": "deepseek/deepseek-r1:free",
+        "llama-4-maverick": "meta-llama/llama-4-maverick:free"
+      }
+    },
+    "groq": {
+      "api_style": "openai",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "api_key_env": "GROQ_API_KEY",
+      "api_key": "",
+      "models": {
+        "qwen-qwq-32b": "qwen-qwq-32b"
+      }
+    }
+  },
+  "gateways": {
+    "cloudflare": {
+      "kind": "cloudflare_ai_gateway",
+      "endpoint": "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID",
+      "api_key_env": "CLOUDFLARE_AI_GATEWAY_TOKEN",
+      "api_key": ""
+    }
+  },
+  "model_routes": {
+    "quick": {
+      "description": "Low-latency route for Quick AI and short questions.",
+      "provider": "google-ai-studio",
+      "model": "gemini-2.5-flash",
+      "gateway": "cloudflare",
+      "parameters": {
+        "temperature": 0.1
+      }
+    },
+    "command": {
+      "description": "Default route for focused AI commands.",
+      "provider": "google-ai-studio",
+      "model": "gemini-2.0-flash",
+      "parameters": {
+        "temperature": 0.3
+      }
+    },
+    "reasoning": {
+      "description": "Higher-effort route for complex analysis.",
+      "provider": "openrouter",
+      "model": "deepseek-r1",
+      "parameters": {
+        "temperature": 0.2
+      }
+    },
+    "cheap": {
+      "description": "Low-cost route for frequent transforms.",
+      "provider": "groq",
+      "model": "qwen-qwq-32b",
+      "parameters": {
+        "temperature": 0
+      }
+    }
+  },
+  "context": {
+    "defaults": ["query"],
+    "sources": {
+      "query": {
+        "risk": "read",
+        "default": true,
+        "description": "Alfred query or text passed to the command."
+      },
+      "selection": {
+        "risk": "read",
+        "default": true,
+        "description": "Selected text from Alfred Universal Actions."
+      },
+      "clipboard": {
+        "risk": "read",
+        "default": false,
+        "description": "Current clipboard text."
+      },
+      "frontmost_app": {
+        "risk": "read",
+        "default": false,
+        "description": "Frontmost app metadata."
+      },
+      "extra": {
+        "risk": "read",
+        "default": false,
+        "description": "One-off context explicitly entered in Alfred."
+      },
+      "recent_chat": {
+        "risk": "read",
+        "default": false,
+        "max_messages": 4,
+        "description": "Recent user and assistant messages from local chat history."
+      },
+      "profile": {
+        "risk": "read",
+        "default": false,
+        "path": "prompts/profile.md",
+        "description": "User profile or durable response preferences."
+      },
+      "preferences": {
+        "risk": "read",
+        "default": false,
+        "description": "Style, language, or formatting preferences."
+      }
+    }
+  },
+  "tools": {
+    "defaults": [],
+    "registry": {
+      "web_search": {
+        "risk": "network",
+        "description": "Provider-native web search when supported.",
+        "provider_tools": {
+          "google": [
+            {
+              "googleSearch": {}
+            }
+          ]
+        },
+        "requires_confirmation": false
+      },
+      "read_clipboard": {
+        "risk": "read",
+        "description": "Read clipboard text when a command opts in.",
+        "requires_confirmation": false
+      },
+      "read_file": {
+        "risk": "read",
+        "description": "Read explicit user-selected files.",
+        "requires_confirmation": false
+      },
+      "run_shell": {
+        "risk": "dangerous",
+        "description": "Run a shell command after explicit confirmation.",
+        "requires_confirmation": true
+      },
+      "mcp_call": {
+        "risk": "dangerous",
+        "description": "Future MCP tool call placeholder.",
+        "requires_confirmation": true,
+        "enabled": false
+      }
+    }
+  },
+  "store": {
+    "history": {
+      "enabled": true,
+      "active_file": "{alfred_workflow_data}/chat.json",
+      "archive_dir": "{alfred_workflow_data}/archive",
+      "format": "json",
+      "default_context_messages": 4
+    },
+    "events": {
+      "enabled": false,
+      "dir": "{alfred_workflow_data}/events",
+      "format": "jsonl"
+    },
+    "summaries": {
+      "enabled": false,
+      "dir": "{alfred_workflow_data}/summaries",
+      "rebuildable": true
+    },
+    "history_search": {
+      "enabled": true,
+      "index_dir": "{alfred_workflow_cache}/history-index",
+      "rebuildable": true
+    },
+    "embeddings": {
+      "enabled": false,
+      "index_dir": "{alfred_workflow_cache}/embeddings",
+      "rebuildable": true
+    }
+  },
+  "output": {
+    "default": {
+      "mode": "show"
+    },
+    "modes": {
+      "show": {
+        "description": "Show response in Alfred Text View."
+      },
+      "copy": {
+        "description": "Copy response to clipboard."
+      },
+      "paste": {
+        "description": "Paste response into the frontmost app."
+      },
+      "replace_selection": {
+        "description": "Replace selected text in the frontmost app.",
+        "requires_confirmation": true
+      },
+      "save": {
+        "description": "Save response to a local file."
+      },
+      "open": {
+        "description": "Open a generated file, URL, or Alfred result target."
+      }
+    }
+  },
+  "commands": {
+    "ask": {
+      "kind": "quick_ai",
+      "title": "Ask LLM",
+      "description": "Ask anything.",
+      "prompt": {
+        "type": "inline",
+        "text": "You are Gemini, an AI assistant created by Google."
+      },
+      "model_route": "quick",
+      "context": [
+        "query",
+        {
+          "source": "recent_chat",
+          "max_messages": 4
+        },
+        "profile"
+      ],
+      "tools": ["web_search"],
+      "output": {
+        "mode": "show"
+      },
+      "confirm": false,
+      "history": true
+    },
+    "explain": {
+      "kind": "ai_command",
+      "title": "Explain",
+      "description": "Explain language elements in the input.",
+      "prompt": {
+        "type": "file",
+        "path": "prompts/explain.md"
+      },
+      "model_route": "command",
+      "context": ["query", "selection", "profile"],
+      "tools": [],
+      "output": {
+        "mode": "show"
+      },
+      "confirm": false,
+      "history": true
+    },
+    "translate": {
+      "kind": "ai_command",
+      "title": "Translate",
+      "description": "Translate input to a target language.",
+      "prompt": {
+        "type": "file",
+        "path": "prompts/rewrite.md"
+      },
+      "model_route": "cheap",
+      "context": ["query", "selection", "extra", "preferences"],
+      "tools": [],
+      "output": {
+        "mode": "show"
+      },
+      "confirm": false,
+      "history": true
+    },
+    "rewrite": {
+      "kind": "ai_command",
+      "title": "Rewrite",
+      "description": "Rewrite selected text while preserving meaning.",
+      "prompt": {
+        "type": "inline",
+        "text": "Rewrite the input clearly while preserving the original intent and format."
+      },
+      "model_route": "cheap",
+      "context": ["query", "selection", "extra", "preferences"],
+      "tools": [],
+      "output": {
+        "mode": "replace_selection"
+      },
+      "confirm": true,
+      "history": true
+    },
+    "summarize": {
+      "kind": "ai_command",
+      "title": "Summarize",
+      "description": "Summarize the provided text.",
+      "prompt": {
+        "type": "inline",
+        "text": "Summarize the input concisely and preserve important details."
+      },
+      "model_route": "command",
+      "context": ["query", "selection", "clipboard"],
+      "tools": ["read_clipboard"],
+      "output": {
+        "mode": "show"
+      },
+      "confirm": false,
+      "history": true
+    },
+    "history_search": {
+      "kind": "history",
+      "title": "Chat History",
+      "description": "Search local chat history.",
+      "prompt": null,
+      "model_route": null,
+      "context": ["query"],
+      "tools": [],
+      "output": {
+        "mode": "show"
+      },
+      "confirm": false,
+      "history": false
+    }
+  }
+}
