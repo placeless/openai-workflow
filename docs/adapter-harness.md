@@ -23,12 +23,28 @@ preview action. The preview script can accept `--selection`, `--clipboard`,
 harness path to La Core. These are caller-provided simulation values only; the
 preview still does not collect real macOS context.
 
+Batch 9 adds a small read-only macOS context probe at
+`scripts/la_context_probe.js`. The probe can read explicit selected text from
+argv, read plain text clipboard contents only when `--include-clipboard` is
+passed, and read frontmost app metadata only when `--include-frontmost-app` is
+passed. `scripts/la_command_preview.js` can call that probe for opt-in preview
+context and still forwards only scalar strings to La Core.
+
+Batch 10 adds a parallel development-only Universal Action named
+`La Core Preview Selection`. It accepts Alfred-provided text, opens a dedicated
+read-only Text View wrapper at `scripts/la_selection_preview.js`, and uses the
+existing preview path with fixed command `explain` and `--selection <text>`. The
+branch uses `examples/la.v2.json` through the preview script and remains dry-run
+only.
+
 ## Non-goals
 
-Batch 8 does not:
+Batch 10.6 does not:
 
 - change live Alfred behavior
-- collect real macOS context
+- collect selected text by simulating keyboard shortcuts
+- write to the clipboard from La scripts
+- read clipboard or frontmost app metadata in the Universal Action branch
 - paste, copy, or replace text
 - call model APIs
 - stream responses
@@ -63,7 +79,9 @@ The supported parser subset is intentionally small:
 - text containing spaces should be shell-quoted by the caller
 
 `--clipboard` and `--frontmost-app` are explicit simulated values only. The
-harness never reads the real clipboard or frontmost app.
+harness never reads the real clipboard or frontmost app. Batch 9 keeps live
+macOS reads isolated to `scripts/la_context_probe.js`, and the preview script
+calls that probe only when an include flag is present.
 
 ## Raw JSON mode
 
@@ -91,23 +109,26 @@ invalid JSON, raw mode returns a structured adapter error:
 
 Core errors such as `UNKNOWN_COMMAND` are preserved in raw mode.
 
-## Preview context simulation
+## Preview context collection
 
-The read-only preview script accepts the same simulated context subset as the
-harness:
+The read-only preview script accepts the same explicit context subset as the
+harness and can also opt into the Batch 9 context probe:
 
 ```sh
 osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo"
 osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
 osascript -l JavaScript scripts/la_command_preview.js -- rewrite --clipboard "rough draft"
 osascript -l JavaScript scripts/la_command_preview.js -- explain --frontmost-app "Safari"
+osascript -l JavaScript scripts/la_command_preview.js -- explain --include-frontmost-app
+osascript -l JavaScript scripts/la_command_preview.js -- explain --include-clipboard --max-clipboard-chars 8000
 ```
 
 The preview resolves context in this order:
 
 1. argv values
-2. simulated environment values
-3. `null`
+2. context probe values explicitly requested by include flags
+3. simulated environment values
+4. `null`
 
 The supported simulated environment variables are:
 
@@ -115,6 +136,26 @@ The supported simulated environment variables are:
 - `LA_SIM_CLIPBOARD`
 - `LA_SIM_FRONTMOST_APP`
 - `LA_SIM_EXTRA`
+
+The context probe can be run manually:
+
+```sh
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --include-clipboard
+osascript -l JavaScript scripts/la_context_probe.js -- --include-frontmost-app
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo" --include-frontmost-app
+```
+
+Clipboard reading is opt-in and returns a simple object with `text`,
+`available`, and `truncated`. The default clipboard text limit is 8000
+characters and can be changed with `--max-clipboard-chars <n>`. The probe does
+not write to `NSPasteboard`, synthesize `Cmd+C`, activate applications, paste,
+copy, replace selection, or call La Core.
+
+Frontmost app reading uses the current macOS frontmost application metadata
+where available. The preview forwards only the app name as La Core
+`frontmost_app` context. Bundle id and path are shown as adapter notes in the
+Text View summary when present.
 
 The resulting Text View summary includes the normalized context names returned
 by La Core:
@@ -193,14 +234,79 @@ lacore Script Filter -> scripts/la_command_preview.js -> scripts/la_adapter_harn
 The preview uses the item's `arg` or `variables.la_command` as the command id,
 uses `examples/la.v2.json`, and can pass explicit simulated selection,
 clipboard, frontmost app, and extra context when those values are provided by
-argv or `LA_SIM_*` development variables. It does not read the real selected
-text, clipboard, or frontmost app, and it does not connect to copy, paste,
-replace-selection, model calls, tool execution, or store writes.
+argv or `LA_SIM_*` development variables. Batch 9 also lets manual preview calls
+opt into the read-only probe with `--include-clipboard` or
+`--include-frontmost-app`. Selected text still comes only from Alfred input,
+explicit argv, or simulated environment fallback; no global selected-text
+scraping or keyboard shortcut simulation is used. The preview does not connect
+to copy, paste, replace-selection, model calls, tool execution, or store writes.
 
-To remove the dev entry later, delete the `info.plist` Script Filter object with
-keyword `lacore` and uid `C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C`, the preview
-Text View object with uid `D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8`, their
-connection and matching `uidata` entries. No `prefs.plist` change is required.
+Batch 10 adds:
+
+```text
+Universal Action: La Core Preview Selection -> scripts/la_selection_preview.js -> scripts/la_command_preview.js -- explain --selection <text>
+```
+
+The action accepts text input from Alfred only, uses fixed command `explain`,
+does not present a command picker, does not read clipboard or frontmost app
+metadata, and does not connect to existing Universal Action branches. Empty
+selection is allowed and renders as an empty/null selection in the dry-run
+preview.
+
+## Clipboard safety notes
+
+Batch 10.6 audited the dev adapter path:
+
+```text
+Alfred input -> scripts/la_selection_preview.js -> scripts/la_command_preview.js -> scripts/la_adapter_harness.js -> scripts/la-core-dev.sh -> La Core
+```
+
+The La scripts on this path do not intentionally write to the system clipboard:
+there is no `pbcopy`, `setString`, `clearContents`, synthetic `Cmd+C`,
+`System Events` keystroke, paste, copy, or replace-selection call in the dev
+path. `scripts/la_context_probe.js --include-clipboard` can read plain text from
+`NSPasteboard`, but only when explicitly requested.
+
+This does not mean Universal Action previews are clipboard-preserving. Alfred's
+Universal Action selected-text path may change the system clipboard and/or
+record the selected text in Alfred Clipboard History even when La never wrote
+it. For sensitive text, avoid testing the Universal Action preview unless Alfred
+clipboard and Clipboard History behavior is understood or controlled. Do not add
+code that clears Alfred Clipboard History.
+
+`scripts/check-clipboard-preservation.sh` is a direct-path smoke test. It
+temporarily writes a sentinel text clipboard value, runs
+`scripts/la_selection_preview.js -- "Hola mundo"`, verifies `pbpaste` still
+returns the sentinel, and restores the previous text clipboard when possible. It
+only proves that the direct La script path did not change the text clipboard; it
+does not prove that Alfred's Universal Action selected-text path is
+clipboard-preserving.
+
+## Build dev workflow
+
+Batch 10.5 adds `scripts/build-dev-workflow.sh` so the development-only Alfred
+branches can be imported and manually tested without overwriting the installed
+production workflow:
+
+```sh
+scripts/build-dev-workflow.sh
+open dist/La-dev.alfredworkflow
+```
+
+The script copies only the files needed by the dev workflow into a temporary
+build directory, patches that copy of `info.plist` to name `La Dev` and bundle
+id `net.placeless.la.dev`, then writes `dist/La-dev.alfredworkflow`. Source
+`info.plist` and `prefs.plist` are not modified. Deno still needs to be
+discoverable by `scripts/la-core-dev.sh` at runtime unless a compiled binary is
+added later.
+
+To remove the dev entries later, delete the `info.plist` Script Filter object
+with keyword `lacore` and uid `C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C`, its
+preview Text View object with uid `D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8`, the
+Universal Action object with uid `1DCA2182-6AAC-4BFC-8537-F0A250AC21DE`, its
+selection preview Text View object with uid
+`26BF14CE-F3C6-429C-8658-A0D40662566B`, their connections, and matching `uidata`
+entries. No `prefs.plist` change is required.
 
 ## Error handling
 
@@ -267,7 +373,12 @@ Preview checks:
 ```sh
 osascript -l JavaScript scripts/la_command_preview.js -- explain
 osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --include-frontmost-app
 osascript -l JavaScript scripts/la_command_preview.js -- ask
+osascript -l JavaScript scripts/la_selection_preview.js -- "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --include-frontmost-app
+scripts/check-clipboard-preservation.sh
 ```
 
 Full repository checks for this batch:
@@ -286,6 +397,8 @@ for f in scripts/*.js; do osacompile -l JavaScript -o /tmp/la-test.scpt "$f"; do
 rm -f /tmp/la-test.scpt
 
 shellcheck scripts/la-core-dev.sh
+shellcheck scripts/build-dev-workflow.sh
+shellcheck scripts/check-clipboard-preservation.sh
 git diff --check
 ```
 

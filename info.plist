@@ -820,6 +820,19 @@
 				<false/>
 			</dict>
 		</array>
+		<key>1DCA2182-6AAC-4BFC-8537-F0A250AC21DE</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>26BF14CE-F3C6-429C-8658-A0D40662566B</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string>Show read-only La Core dry-run preview</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
 		<key>C6E0966E-A4F8-4DC1-8373-F247FA06A251</key>
 		<array>
 			<dict>
@@ -3076,6 +3089,60 @@ printf '%s\n' "$output"</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>acceptsfiles</key>
+				<false/>
+				<key>acceptsmulti</key>
+				<integer>0</integer>
+				<key>acceptstext</key>
+				<true/>
+				<key>acceptsurls</key>
+				<false/>
+				<key>name</key>
+				<string>La Core Preview Selection</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.trigger.universalaction</string>
+			<key>uid</key>
+			<string>1DCA2182-6AAC-4BFC-8537-F0A250AC21DE</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>behaviour</key>
+				<integer>2</integer>
+				<key>fontmode</key>
+				<integer>0</integer>
+				<key>fontsizing</key>
+				<integer>0</integer>
+				<key>footertext</key>
+				<string>Read-only dry-run selection preview using examples/la.v2.json</string>
+				<key>inputfile</key>
+				<string>scripts/la_selection_preview.js</string>
+				<key>inputtype</key>
+				<integer>1</integer>
+				<key>loadingtext</key>
+				<string>Building La Core selection preview...</string>
+				<key>outputmode</key>
+				<integer>0</integer>
+				<key>scriptinput</key>
+				<integer>0</integer>
+				<key>spellchecking</key>
+				<integer>0</integer>
+				<key>stackview</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.text</string>
+			<key>uid</key>
+			<string>26BF14CE-F3C6-429C-8658-A0D40662566B</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string>## Setup
@@ -3719,6 +3786,28 @@ View Chat History with ⌥↩&amp;#xFE0E; in the `ask` keyword. Each result show
 			<integer>400</integer>
 			<key>ypos</key>
 			<integer>2410</integer>
+		</dict>
+		<key>1DCA2182-6AAC-4BFC-8537-F0A250AC21DE</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>2</integer>
+			<key>note</key>
+			<string>Batch 10 dev-only Universal Action selection preview</string>
+			<key>xpos</key>
+			<integer>50</integer>
+			<key>ypos</key>
+			<integer>2560</integer>
+		</dict>
+		<key>26BF14CE-F3C6-429C-8658-A0D40662566B</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>2</integer>
+			<key>note</key>
+			<string>Batch 10 read-only La Core selection preview</string>
+			<key>xpos</key>
+			<integer>400</integer>
+			<key>ypos</key>
+			<integer>2560</integer>
 		</dict>
 		<key>D4C5F789-DF7F-43E9-8D5C-7F8DC150569F</key>
 		<dict>

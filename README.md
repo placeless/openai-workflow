@@ -161,11 +161,68 @@ and returns Alfred Script Filter JSON.
 Selecting a `lacore` command and pressing Enter opens a read-only Text View
 preview from `scripts/la_command_preview.js`. The preview calls the adapter
 harness in raw `command` mode and formats the dry-run response for the selected
-command.
+command. Manual preview runs can also opt into the read-only context probe:
+
+```sh
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --include-frontmost-app
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --include-frontmost-app
+```
+
+The dev-only Universal Action `La Core Preview Selection` accepts text from
+Alfred, uses fixed command `explain`, and opens the same read-only dry-run
+preview through `scripts/la_selection_preview.js`:
+
+```sh
+osascript -l JavaScript scripts/la_selection_preview.js -- "Hola mundo"
+```
 
 This entry is parallel to the existing workflow. It does not replace `ask`,
 `chat`, `explain`, or `translate`; it does not call providers, stream, execute
-tools, collect real selected text, clipboard, or frontmost app context,
-paste/copy/replace text, write history, or migrate the real user config. To
-remove it, delete the isolated `lacore` Script Filter object, preview Text View
-object, their connection, and matching `uidata` entries from `info.plist`.
+tools, collect selected text by simulating keyboard shortcuts, intentionally
+write to the clipboard, paste/copy/replace text, write history, or migrate the
+real user config. The Universal Action branch does not read clipboard or
+frontmost app metadata. Clipboard and frontmost app reads are opt-in manual
+preview-only probe actions, and selected text must come from Alfred input,
+explicit argv, or development fallbacks. To remove the dev branches, delete the
+isolated `lacore` Script Filter object, the `La Core Preview Selection`
+Universal Action, their preview Text View objects, connections, and matching
+`uidata` entries from `info.plist`.
+
+### Clipboard Safety Notes
+
+La Core and the adapter scripts do not intentionally write to the system
+clipboard. `scripts/la_context_probe.js --include-clipboard` can read clipboard
+text, but only when explicitly requested. The dev-only Universal Action receives
+selected text from Alfred. Alfred's Universal Action selected-text path may
+change the system clipboard and/or record the selected text in Alfred Clipboard
+History even when La scripts never wrote it. For sensitive text, avoid testing
+Universal Action preview unless Alfred clipboard and Clipboard History behavior
+is understood or controlled.
+
+To smoke-test the direct La script path:
+
+```sh
+scripts/check-clipboard-preservation.sh
+```
+
+That helper temporarily writes a sentinel text clipboard value, runs
+`scripts/la_selection_preview.js`, verifies the sentinel is still present, and
+restores the previous text clipboard when possible. It proves only the direct La
+script path; it does not prove Alfred's Universal Action selected-text path is
+clipboard-preserving.
+
+### Build Dev Workflow
+
+Build an importable development workflow from this repository:
+
+```sh
+scripts/build-dev-workflow.sh
+open dist/La-dev.alfredworkflow
+```
+
+The package is a separate workflow named `La Dev` with bundle id
+`net.placeless.la.dev`, so it should not overwrite an installed production
+workflow. Manual Alfred UI testing for `lacore` and `La Core Preview Selection`
+should be done against `La Dev`. Deno still needs to be discoverable by
+`scripts/la-core-dev.sh` unless a compiled binary is added later.

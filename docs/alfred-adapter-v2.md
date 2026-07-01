@@ -36,17 +36,46 @@ can pass caller-provided `--selection`, `--clipboard`, `--frontmost-app`, and
 `--extra` values to the raw harness path, with optional `LA_SIM_*` development
 environment fallbacks. It still does not collect real macOS context.
 
+Batch 9 adds `scripts/la_context_probe.js`, a read-only macOS context probe for
+manual and preview use. It reads selected text only from explicit argv, reads
+plain text clipboard contents only when `--include-clipboard` is passed, and
+reads frontmost app metadata only when `--include-frontmost-app` is passed. The
+preview forwards normalized scalar context to La Core and shows bundle id/path
+metadata only as adapter notes.
+
+Batch 10 adds a parallel development-only Universal Action named
+`La Core Preview Selection`. It accepts Alfred-provided text, uses fixed command
+`explain`, and opens a read-only Text View wrapper at
+`scripts/la_selection_preview.js`, which invokes the existing command preview
+with `--selection <text>`. It remains dry-run only and uses
+`examples/la.v2.json` through the preview path.
+
+Batch 10.5 adds `scripts/build-dev-workflow.sh`, which packages a temporary copy
+of the repo as `dist/La-dev.alfredworkflow` with workflow name `La Dev` and
+bundle id `net.placeless.la.dev`. This lets the dev-only `lacore` and
+`La Core Preview Selection` branches be imported into Alfred separately from an
+installed production workflow.
+
+Batch 10.6 audits clipboard safety. La Core and the adapter scripts do not
+intentionally write to the clipboard, and the Universal Action branch does not
+read clipboard data. `scripts/la_context_probe.js --include-clipboard` remains
+an explicit read-only probe. Alfred's Universal Action selected-text path may
+change the system clipboard and/or record the selected text in Alfred Clipboard
+History, so the Universal Action preview must not be documented as
+clipboard-preserving.
+
 ## Non-goals
 
-Batch 8 does not:
+Batch 10.6 does not:
 
 - switch Alfred to Deno
 - modify existing live workflow behavior
 - replace existing `ask`, `chat`, `explain`, or `translate` commands
 - call providers
 - stream responses
-- collect real clipboard or frontmost app data
-- collect real selected text
+- collect selected text by simulating keyboard shortcuts
+- write to the clipboard from La scripts
+- read clipboard or frontmost app data in the Universal Action branch
 - execute tools
 - implement MCP or embeddings
 - write history or store data
@@ -92,7 +121,8 @@ The future Alfred/JXA adapter should stay thin and macOS-specific:
   and workflow cache paths
 - receive selected text from Universal Action
 - decide which La Core command to call for the current Alfred entry point
-- optionally collect clipboard and frontmost app metadata in a later batch
+- optionally collect clipboard and frontmost app metadata through the read-only
+  Batch 9 context probe
 - invoke the launcher or compiled core helper
 - parse La Core JSON from stdout
 - render `ok: true` responses into Alfred Text View, Script Filter, clipboard,
@@ -155,9 +185,11 @@ Fields:
   the request is purely selection-driven.
 - `context.query`: Alfred query text.
 - `context.selection`: selected text supplied by Universal Action.
-- `context.clipboard`: optional clipboard text, disabled by default in Batch 4.
-- `context.frontmost_app`: optional app/window metadata, disabled by default in
-  Batch 4.
+- `context.clipboard`: optional clipboard text, disabled by default and read
+  only when an adapter explicitly opts in.
+- `context.frontmost_app`: optional app metadata, disabled by default and read
+  only when an adapter explicitly opts in. Batch 9 forwards the app name to La
+  Core and keeps bundle id/path in adapter notes.
 - `context.extra`: optional explicit one-off context.
 - `output.mode`: requested Alfred output behavior. `show` is the safe default.
 
@@ -375,7 +407,7 @@ The first wiring batch should start with read-only `show` behavior. Mutating
 output modes such as `paste` and `replace_selection` should wait for explicit
 confirmation and focused tests.
 
-## Batch 6, 7, and 8 Alfred entry
+## Batch 6 through 10 Alfred entry
 
 The first wired entry is intentionally parallel:
 
@@ -411,16 +443,69 @@ osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Ho
 osascript -l JavaScript scripts/la_command_preview.js -- explain --frontmost-app "Safari"
 ```
 
-The preview prefers argv values, then `LA_SIM_SELECTION`, `LA_SIM_CLIPBOARD`,
-`LA_SIM_FRONTMOST_APP`, and `LA_SIM_EXTRA`, then `null`. The Text View summary
-renders normalized La Core context fields such as `selection`, `clipboard`,
-`frontmost_app`, and `extra`. It does not read the real selected text,
-clipboard, or frontmost app, and it does not connect to providers,
-copy/paste/replace, tools, or history writes.
+The preview prefers argv values, then opt-in context probe values, then
+`LA_SIM_SELECTION`, `LA_SIM_CLIPBOARD`, `LA_SIM_FRONTMOST_APP`, and
+`LA_SIM_EXTRA`, then `null`. The Text View summary renders normalized La Core
+context fields such as `selection`, `clipboard`, `frontmost_app`, and `extra`.
+It does not connect to providers, copy/paste/replace, tools, or history writes.
 
-To remove the dev branch, delete the `lacore` Script Filter object, the preview
-Text View object, their connection, and matching `uidata` entries from
-`info.plist`. No `prefs.plist` change is needed.
+Batch 9 inserts the read-only context probe between explicit argv and `LA_SIM_*`
+fallbacks when a caller passes include flags:
+
+```sh
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --include-frontmost-app
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --include-frontmost-app
+osascript -l JavaScript scripts/la_command_preview.js -- explain --include-clipboard --max-clipboard-chars 8000
+```
+
+Selected text still comes only from Alfred-provided input, explicit argv, or
+Batch 8 simulated environment fallback. No `Cmd+C` simulation is used. Clipboard
+reads are opt-in, capped, and read-only. Frontmost app reads use
+`NSWorkspace.sharedWorkspace.frontmostApplication` where available and do not
+require activating apps.
+
+Batch 10 adds a second isolated dev branch:
+
+```text
+Universal Action: La Core Preview Selection
+  -> scripts/la_selection_preview.js
+  -> scripts/la_command_preview.js -- explain --selection <Alfred text>
+  -> scripts/la_adapter_harness.js --raw
+  -> scripts/la-core-dev.sh
+  -> Deno La Core dry-run
+  -> Alfred Text View
+```
+
+This branch accepts text from Alfred Universal Action input only, uses fixed
+command `explain`, and does not read clipboard, read frontmost app metadata,
+paste, copy, replace selection, call providers, execute tools, or write history.
+It does not add a command picker.
+
+Clipboard safety nuance: the La scripts do not intentionally write selected text
+to the clipboard, but Alfred's Universal Action selected-text path may change
+the system clipboard and/or record the selected text in Alfred Clipboard
+History. For sensitive text, test against `La Dev` only after Alfred clipboard
+and Clipboard History behavior is understood or controlled, or clear clipboard
+and history through Alfred afterward. The repository does not include any code
+to clear Alfred Clipboard History.
+
+To smoke-test only the direct La script path:
+
+```sh
+scripts/check-clipboard-preservation.sh
+```
+
+That test temporarily writes a sentinel text clipboard value, runs
+`scripts/la_selection_preview.js`, checks that `pbpaste` is unchanged, and
+restores the previous text clipboard where possible. It proves only the direct
+La script path; it does not prove Alfred's Universal Action selected-text path
+is clipboard-preserving.
+
+To remove the dev branches, delete the `lacore` Script Filter object, the
+command preview Text View object, the `La Core Preview Selection` Universal
+Action object, the selection preview Text View object, their connections, and
+matching `uidata` entries from `info.plist`. No `prefs.plist` change is needed.
 
 ## Testing strategy
 
@@ -437,10 +522,17 @@ scripts/la-core-dev.sh config-check --config examples/la.v2.json
 scripts/la-core-dev.sh commands --config examples/la.v2.json
 scripts/la-core-dev.sh quick "hello" --config examples/la.v2.json
 scripts/la-core-dev.sh command explain --selection "Hola mundo" --extra "A1 learner" --config examples/la.v2.json
+scripts/build-dev-workflow.sh
+test -f dist/La-dev.alfredworkflow
 
 osascript -l JavaScript scripts/la_adapter_harness.js -- --raw commands --config examples/la.v2.json
 osascript -l JavaScript scripts/la_adapter_harness.js -- commands --config examples/la.v2.json
 osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
+osascript -l JavaScript scripts/la_context_probe.js -- --selection "Hola mundo"
+osascript -l JavaScript scripts/la_context_probe.js -- --include-frontmost-app
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --include-frontmost-app
+osascript -l JavaScript scripts/la_selection_preview.js -- "Hola mundo"
+scripts/check-clipboard-preservation.sh
 osascript -l JavaScript scripts/la_command_preview.js -- ask
 
 plutil -lint info.plist prefs.plist
@@ -451,7 +543,10 @@ for f in scripts/*.js; do osacompile -l JavaScript -o /tmp/la-test.scpt "$f"; do
 rm -f /tmp/la-test.scpt
 ```
 
-Run `shellcheck scripts/la-core-dev.sh` when ShellCheck is available.
+Run `shellcheck scripts/la-core-dev.sh`,
+`shellcheck scripts/build-dev-workflow.sh`, and
+`shellcheck scripts/check-clipboard-preservation.sh` when ShellCheck is
+available.
 
 ## Migration path
 

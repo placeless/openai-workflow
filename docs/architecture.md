@@ -135,6 +135,44 @@ The core dry-run response preserves those values in the normalized `context`
 object. This still does not read real macOS context or mutate clipboard, paste,
 selection, history, tools, streams, or providers.
 
+Batch 9 adds `scripts/la_context_probe.js`, a read-only macOS context probe for
+the dry-run preview path. The probe can read explicit selected text from argv,
+plain text clipboard contents only behind `--include-clipboard`, and frontmost
+app metadata only behind `--include-frontmost-app`. The preview forwards only
+scalar context strings into La Core, shows bundle id/path as adapter notes, and
+still does not simulate `Cmd+C`, mutate clipboard, paste, replace selection,
+write history, execute tools, stream, call providers, migrate config, or replace
+the existing `ask`, `chat`, `explain`, or `translate` branches.
+
+Batch 10 adds a second isolated development branch to the Alfred graph:
+Universal Action `La Core Preview Selection` connects to a read-only Text View
+wrapper at `scripts/la_selection_preview.js`. The wrapper takes Alfred-provided
+text, invokes `scripts/la_command_preview.js -- explain --selection <text>`,
+and displays the resulting La Core dry-run preview. It uses `examples/la.v2.json`
+through the preview path and does not read clipboard, read frontmost app
+metadata, simulate `Cmd+C`, paste, copy, replace selection, call providers,
+stream, execute tools, write history, migrate config, or replace existing
+workflow commands.
+
+Batch 10.5 adds `scripts/build-dev-workflow.sh`, a packaging helper that builds
+`dist/La-dev.alfredworkflow` from a temporary copy of the repository files. The
+packaged copy is renamed to `La Dev` with bundle id `net.placeless.la.dev` so
+manual Alfred testing can target the dev workflow without modifying source
+`info.plist`, source `prefs.plist`, or an installed production workflow.
+
+Batch 10.6 audits clipboard safety after manual Alfred testing showed selected
+text in Alfred Clipboard History after leaving the dev Universal Action preview.
+Batch 10.6.1 tightens that wording after manual testing showed `pbpaste` changed
+from the previous clipboard value to the selected text after running the
+dev-only Universal Action. The refined boundary is that La scripts must not
+intentionally write to the system pasteboard. The direct La path does not call
+`pbcopy`, write to `NSPasteboard`, synthesize `Cmd+C`, paste, copy, replace
+selection, or clear clipboard/history. `scripts/la_context_probe.js
+--include-clipboard` can read plain text clipboard content only when explicitly
+requested. Alfred's Universal Action selected-text path may change the system
+clipboard and/or record selected text in Alfred Clipboard History, outside La's
+control.
+
 ## Verification
 
 Documentation-only changes do not require a manual Alfred workflow run. If runtime files change in a later batch, run:

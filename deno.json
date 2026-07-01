@@ -12,6 +12,8 @@
       "docs/adapter-harness.md",
       "scripts/la_adapter_harness.js",
       "scripts/la_command_preview.js",
+      "scripts/la_context_probe.js",
+      "scripts/la_selection_preview.js",
       "deno.json"
     ]
   },
