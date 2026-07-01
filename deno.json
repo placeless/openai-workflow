@@ -11,6 +11,7 @@
       "docs/alfred-adapter-v2.md",
       "docs/adapter-harness.md",
       "scripts/la_adapter_harness.js",
+      "scripts/la_command_preview.js",
       "deno.json"
     ]
   },

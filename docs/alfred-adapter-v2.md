@@ -22,19 +22,34 @@ calls the launcher through `NSTask`, validates stdout JSON, and can render known
 core responses as Alfred Script Filter JSON. The harness is documented in
 `docs/adapter-harness.md` and is still not wired into the live workflow.
 
+Batch 6 adds one parallel development-only Alfred Script Filter keyword,
+`lacore`, that calls the Batch 5 harness for the `commands` mode with
+`examples/la.v2.json`. It validates Alfred Script Filter rendering without
+replacing or connecting any existing workflow command.
+
+Batch 7 connects the same `lacore` branch to one read-only Text View preview
+action. The preview script calls the harness in raw `command` mode and formats
+the dry-run JSON for display.
+
 ## Non-goals
 
-Batch 4 does not:
+Batch 7 does not:
 
 - switch Alfred to Deno
-- modify live workflow behavior
+- modify existing live workflow behavior
+- replace existing `ask`, `chat`, `explain`, or `translate` commands
 - call providers
 - stream responses
 - collect real clipboard or frontmost app data
+- collect real selected text
 - execute tools
+- implement MCP or embeddings
+- write history or store data
+- copy, paste, or replace text
 - compile binaries
 - migrate v1 config
-- modify `info.plist` or `prefs.plist`
+- use the real user config
+- modify `prefs.plist`
 - replace `scripts/llm.js` or any other current runtime script
 
 ## Boundary
@@ -60,8 +75,9 @@ La Core:
 ```
 
 `info.plist` remains the live Alfred routing source until a later batch switches
-specific workflow objects deliberately. Current JXA scripts continue to own the
-v1 runtime path.
+specific workflow objects deliberately. Batch 7 adds only the isolated
+development keyword `lacore` and its read-only preview action; current JXA
+scripts continue to own the v1 runtime path.
 
 ## Alfred responsibilities
 
@@ -352,6 +368,41 @@ The first wiring batch should start with read-only `show` behavior. Mutating
 output modes such as `paste` and `replace_selection` should wait for explicit
 confirmation and focused tests.
 
+## Batch 6 and 7 Alfred entry
+
+The first wired entry is intentionally parallel:
+
+```text
+lacore -> scripts/la_adapter_harness.js commands --config examples/la.v2.json
+```
+
+Its full path is:
+
+```text
+Alfred Script Filter -> JXA harness -> scripts/la-core-dev.sh -> Deno La Core -> Alfred Script Filter JSON
+```
+
+The keyword uses the example v2 config only. The resulting Script Filter items
+include command title, subtitle, arg, `valid`, and `variables.la_command`.
+Alfred built-in filtering handles `lacore <query>`; the query is not forwarded
+to La Core in Batch 6.
+
+Batch 7 connects Enter to:
+
+```text
+selected command -> scripts/la_command_preview.js -> scripts/la_adapter_harness.js --raw command <id> --config examples/la.v2.json
+```
+
+The action shows a Text View dry-run summary with command id, kind, model route,
+output mode, tools, confirmation requirement, null context fields, and dry-run
+notes. It does not collect real selected text, clipboard, frontmost app, or
+extra context, and it does not connect to providers, copy/paste/replace, tools,
+or history writes.
+
+To remove the dev branch, delete the `lacore` Script Filter object, the preview
+Text View object, their connection, and matching `uidata` entries from
+`info.plist`. No `prefs.plist` change is needed.
+
 ## Testing strategy
 
 Batch 4 verification should cover existing core checks, launcher behavior, and
@@ -367,6 +418,11 @@ scripts/la-core-dev.sh config-check --config examples/la.v2.json
 scripts/la-core-dev.sh commands --config examples/la.v2.json
 scripts/la-core-dev.sh quick "hello" --config examples/la.v2.json
 scripts/la-core-dev.sh command explain --selection "Hola mundo" --config examples/la.v2.json
+
+osascript -l JavaScript scripts/la_adapter_harness.js -- --raw commands --config examples/la.v2.json
+osascript -l JavaScript scripts/la_adapter_harness.js -- commands --config examples/la.v2.json
+osascript -l JavaScript scripts/la_command_preview.js -- explain
+osascript -l JavaScript scripts/la_command_preview.js -- ask
 
 plutil -lint info.plist prefs.plist
 python3 -m json.tool config/alfred/la.json

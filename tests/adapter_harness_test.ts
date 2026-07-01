@@ -29,3 +29,30 @@ Deno.test("adapter harness avoids live macOS context and mutation APIs", async (
     assert(!script.includes(token), `unexpected live adapter token: ${token}`);
   }
 });
+
+Deno.test("command preview stays read-only and uses the adapter harness", async () => {
+  const script = await Deno.readTextFile("scripts/la_command_preview.js");
+
+  assert(
+    script.includes("scripts/la_adapter_harness.js"),
+    "expected preview to call the adapter harness",
+  );
+  assert(script.includes('"--raw"'), "expected preview to use raw core JSON");
+  assert(!script.includes("deno run"), "preview should not call deno directly");
+
+  const banned = [
+    "NSPasteboard",
+    "System Events",
+    "keystroke",
+    "setTheClipboardTo",
+    "writeToFile",
+    "removeItemAtPath",
+  ];
+
+  for (const token of banned) {
+    assert(
+      !script.includes(token),
+      `unexpected preview mutation token: ${token}`,
+    );
+  }
+});

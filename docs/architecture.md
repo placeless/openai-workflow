@@ -113,6 +113,20 @@ Batch 4 defines the future Alfred/JXA to La Core bridge in `docs/alfred-adapter-
 
 Batch 5 adds the read-only manual JXA adapter harness documented in `docs/adapter-harness.md`. The harness calls `scripts/la-core-dev.sh`, validates JSON stdout, and can produce Alfred Script Filter JSON for contract testing. It is not referenced by `info.plist` or `prefs.plist`.
 
+Batch 6 adds a parallel development-only Alfred Script Filter keyword, `lacore`,
+to `info.plist`. The entry calls the Batch 5 harness in `commands` mode with
+`examples/la.v2.json` and renders the La Core command list as Alfred Script
+Filter JSON. It is read-only, uses the example config only, is not connected to
+downstream actions, and does not replace existing `ask`, `chat`, `explain`, or
+`translate` behavior. `prefs.plist` remains unchanged.
+
+Batch 7 connects only the `lacore` branch to a read-only Text View preview
+action. The preview runs `scripts/la_command_preview.js`, calls the adapter
+harness in raw `command` mode with `examples/la.v2.json`, and displays a
+dry-run summary for the selected command. It does not collect real selected
+text, clipboard, or frontmost app context, and it does not copy, paste, replace,
+write history, execute tools, stream, or call providers.
+
 ## Verification
 
 Documentation-only changes do not require a manual Alfred workflow run. If runtime files change in a later batch, run:

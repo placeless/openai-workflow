@@ -4,7 +4,7 @@
 
 Please create a configuration file, such as `~/.config/alfred/la.json`, tailored to your specific needs. This configuration file should be structured into two main sections: `providers` for your Large Language Model (LLM) providers and `tasks` for the tasks you want the LLMs to perform.
 
-See [docs/architecture.md](docs/architecture.md) for the current workflow architecture and v2 refactor boundaries. The proposed v2 configuration model is documented in [docs/config-v2.md](docs/config-v2.md), with migration notes in [docs/migration-config-v1-to-v2.md](docs/migration-config-v1-to-v2.md), runtime direction in [docs/runtime-review.md](docs/runtime-review.md), the dry-run Deno skeleton in [docs/core-skeleton.md](docs/core-skeleton.md), and the future Alfred adapter contract in [docs/alfred-adapter-v2.md](docs/alfred-adapter-v2.md).
+See [docs/architecture.md](docs/architecture.md) for the current workflow architecture and v2 refactor boundaries. The proposed v2 configuration model is documented in [docs/config-v2.md](docs/config-v2.md), with migration notes in [docs/migration-config-v1-to-v2.md](docs/migration-config-v1-to-v2.md), runtime direction in [docs/runtime-review.md](docs/runtime-review.md), the dry-run Deno skeleton in [docs/core-skeleton.md](docs/core-skeleton.md), the future Alfred adapter contract in [docs/alfred-adapter-v2.md](docs/alfred-adapter-v2.md), and the read-only adapter harness in [docs/adapter-harness.md](docs/adapter-harness.md).
 
 Each `provider` entry should include the following:
 
@@ -150,3 +150,22 @@ View Chat History with ⌥↩&#xFE0E; in the `ask` keyword. Each result shows th
 ![Viewing chat histories](images/about/chathistory.png)
 
 <kbd>↩&#xFE0E;</kbd> to archive the current chat and load the selected one. Older chats can be trashed with the `Delete` [Universal Action](https://www.alfredapp.com/help/features/universal-actions/). Select multiple chats with the [File Buffer](https://www.alfredapp.com/help/features/file-search/#file-buffer).
+
+### La Core Dev Keyword
+
+`lacore` is a development-only, read-only Alfred entry for the v2 La Core
+dry-run path. It calls `scripts/la_adapter_harness.js`, which launches
+`scripts/la-core-dev.sh`, which runs Deno La Core against `examples/la.v2.json`
+and returns Alfred Script Filter JSON.
+
+Selecting a `lacore` command and pressing Enter opens a read-only Text View
+preview from `scripts/la_command_preview.js`. The preview calls the adapter
+harness in raw `command` mode and formats the dry-run response for the selected
+command.
+
+This entry is parallel to the existing workflow. It does not replace `ask`,
+`chat`, `explain`, or `translate`; it does not call providers, stream, execute
+tools, collect real selected text, clipboard, or frontmost app context,
+paste/copy/replace text, write history, or migrate the real user config. To
+remove it, delete the isolated `lacore` Script Filter object, preview Text View
+object, their connection, and matching `uidata` entries from `info.plist`.

@@ -2,17 +2,24 @@
 
 ## Goal
 
-Batch 5 adds a manual, read-only JXA harness at `scripts/la_adapter_harness.js`.
-It proves that a future Alfred adapter can collect explicit Alfred-style inputs,
-build a safe La Core invocation, call the version-neutral launcher, parse JSON
-stdout, and render either raw core JSON or Alfred Script Filter JSON.
+Batch 5 added a manual, read-only JXA harness at
+`scripts/la_adapter_harness.js`. It proves that a future Alfred adapter can
+collect explicit Alfred-style inputs, build a safe La Core invocation, call the
+version-neutral launcher, parse JSON stdout, and render either raw core JSON or
+Alfred Script Filter JSON.
 
-The harness is not wired into Alfred. `info.plist`, `prefs.plist`, and the
-existing runtime scripts remain the live workflow path.
+Batch 6 wires that harness into one parallel development-only Alfred Script
+Filter keyword, `lacore`. Existing `ask`, `chat`, `explain`, and `translate`
+behavior remains on the current workflow path. `prefs.plist` and the existing
+runtime scripts remain unchanged.
+
+Batch 7 connects `lacore` to a read-only Text View preview action. Selecting a
+command runs `scripts/la_command_preview.js`, which calls the harness in raw
+mode and formats the dry-run response as readable text.
 
 ## Non-goals
 
-Batch 5 does not:
+Batch 7 does not:
 
 - change live Alfred behavior
 - collect real macOS context
@@ -22,6 +29,8 @@ Batch 5 does not:
 - execute tools
 - write to the local store
 - migrate v1 config
+- replace existing workflow commands
+- support real user config migration
 
 ## How it calls La Core
 
@@ -106,6 +115,48 @@ Script Filter conversion is only a future UI preview in this batch.
 
 `config-check` also returns a single non-actionable status item.
 
+## Alfred dev keyword
+
+Batch 6 adds a parallel Script Filter keyword:
+
+```text
+lacore
+```
+
+The Alfred object invokes the harness through:
+
+```sh
+/usr/bin/osascript -l JavaScript scripts/la_adapter_harness.js -- commands --config examples/la.v2.json
+```
+
+The adapter path is:
+
+```text
+Alfred Script Filter -> scripts/la_adapter_harness.js -> scripts/la-core-dev.sh -> Deno La Core -> Alfred Script Filter JSON
+```
+
+The keyword is development-only, read-only, and dry-run only. It lists commands
+from `examples/la.v2.json`; it does not read the real user config. Alfred's
+built-in filtering is enabled, so `lacore <query>` filters the rendered command
+items without passing the query to La Core.
+
+Batch 7 adds a single downstream Text View action. Pressing Enter on a `lacore`
+item shows a dry-run preview for the selected command through:
+
+```text
+lacore Script Filter -> scripts/la_command_preview.js -> scripts/la_adapter_harness.js --raw -> scripts/la-core-dev.sh -> Deno La Core
+```
+
+The preview uses the item's `arg` or `variables.la_command` as the command id,
+uses `examples/la.v2.json`, and passes no selection, clipboard, frontmost app,
+or extra context. It does not connect to copy, paste, replace-selection, model
+calls, tool execution, or store writes.
+
+To remove the dev entry later, delete the `info.plist` Script Filter object with
+keyword `lacore` and uid `C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C`, the preview
+Text View object with uid `D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8`, their
+connection and matching `uidata` entries. No `prefs.plist` change is required.
+
 ## Error handling
 
 When La Core returns:
@@ -166,6 +217,13 @@ osascript -l JavaScript scripts/la_adapter_harness.js -- quick "hello" --config 
 osascript -l JavaScript scripts/la_adapter_harness.js -- command explain --selection "Hola mundo" --config examples/la.v2.json | python3 -m json.tool
 ```
 
+Preview checks:
+
+```sh
+osascript -l JavaScript scripts/la_command_preview.js -- explain
+osascript -l JavaScript scripts/la_command_preview.js -- ask
+```
+
 Full repository checks for this batch:
 
 ```sh
@@ -185,11 +243,11 @@ shellcheck scripts/la-core-dev.sh
 git diff --check
 ```
 
-## Why it is not wired into Alfred yet
+## Why command execution is not wired yet
 
-The harness proves the adapter-to-core contract without changing current Alfred
-behavior. Live wiring still needs a deliberate later batch that chooses one
-read-only Alfred object, compares user-visible output with the current workflow,
-and keeps mutating actions such as copy, paste, replace-selection, store writes,
-model calls, streaming, tools, and MCP out of scope until their contracts are
-separately tested.
+The `lacore` keyword proves Script Filter rendering without changing current
+Alfred behavior. Command execution still needs a deliberate later batch that
+chooses one read-only action, compares user-visible output with the current
+workflow, and keeps mutating actions such as copy, paste, replace-selection,
+store writes, model calls, streaming, tools, and MCP out of scope until their
+contracts are separately tested.

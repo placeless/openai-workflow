@@ -807,6 +807,19 @@
 				<true/>
 			</dict>
 		</array>
+		<key>C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string>Show read-only dry-run preview</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
 		<key>C6E0966E-A4F8-4DC1-8373-F247FA06A251</key>
 		<array>
 			<dict>
@@ -2969,6 +2982,100 @@ kill "${pid_stream}"
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<true/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<true/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>0</integer>
+				<key>keyword</key>
+				<string>lacore</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>Loading La Core commands...</string>
+				<key>script</key>
+				<string>readonly harness="scripts/la_adapter_harness.js"
+
+if [[ ! -f "$harness" ]]; then
+  printf '%s\n' '{"items":[{"title":"La Adapter Error","subtitle":"ADAPTER_HARNESS_NOT_FOUND: scripts/la_adapter_harness.js was not found.","valid":false,"variables":{"la_error_code":"ADAPTER_HARNESS_NOT_FOUND","la_error_message":"scripts/la_adapter_harness.js was not found."}}]}'
+  exit 0
+fi
+
+if ! output="$(/usr/bin/osascript -l JavaScript "$harness" -- commands --config examples/la.v2.json 2&gt;/dev/null)"; then
+  printf '%s\n' '{"items":[{"title":"La Adapter Error","subtitle":"ADAPTER_OSASCRIPT_FAILED: Could not run scripts/la_adapter_harness.js.","valid":false,"variables":{"la_error_code":"ADAPTER_OSASCRIPT_FAILED","la_error_message":"Could not run scripts/la_adapter_harness.js."}}]}'
+  exit 0
+fi
+
+printf '%s\n' "$output"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>Dev-only read-only La Core command list</string>
+				<key>title</key>
+				<string>La Core commands (dev)</string>
+				<key>type</key>
+				<integer>11</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>behaviour</key>
+				<integer>2</integer>
+				<key>fontmode</key>
+				<integer>0</integer>
+				<key>fontsizing</key>
+				<integer>0</integer>
+				<key>footertext</key>
+				<string>Read-only dry-run preview using examples/la.v2.json</string>
+				<key>inputfile</key>
+				<string>scripts/la_command_preview.js</string>
+				<key>inputtype</key>
+				<integer>1</integer>
+				<key>loadingtext</key>
+				<string>Building La Core dry run...</string>
+				<key>outputmode</key>
+				<integer>0</integer>
+				<key>scriptinput</key>
+				<integer>0</integer>
+				<key>spellchecking</key>
+				<integer>0</integer>
+				<key>stackview</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.text</string>
+			<key>uid</key>
+			<string>D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string>## Setup
@@ -3566,6 +3673,17 @@ View Chat History with ⌥↩&amp;#xFE0E; in the `ask` keyword. Each result show
 			<key>ypos</key>
 			<real>920</real>
 		</dict>
+		<key>C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>2</integer>
+			<key>note</key>
+			<string>Batch 6 dev-only read-only La Core command list</string>
+			<key>xpos</key>
+			<integer>50</integer>
+			<key>ypos</key>
+			<integer>2410</integer>
+		</dict>
 		<key>C6E0966E-A4F8-4DC1-8373-F247FA06A251</key>
 		<dict>
 			<key>colorindex</key>
@@ -3590,6 +3708,17 @@ View Chat History with ⌥↩&amp;#xFE0E; in the `ask` keyword. Each result show
 			<real>410</real>
 			<key>ypos</key>
 			<real>950</real>
+		</dict>
+		<key>D3C2B7F16-7B8F-4C50-832B-9D7413D6C2A8</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>2</integer>
+			<key>note</key>
+			<string>Batch 7 read-only La Core dry-run preview</string>
+			<key>xpos</key>
+			<integer>400</integer>
+			<key>ypos</key>
+			<integer>2410</integer>
 		</dict>
 		<key>D4C5F789-DF7F-43E9-8D5C-7F8DC150569F</key>
 		<dict>
