@@ -1,5 +1,5 @@
 import type {
-  LaConfigV2,
+  LaConfig,
   ModelRouteConfig,
   OutputConfig,
 } from "../config/types.ts";
@@ -19,7 +19,7 @@ export interface DryRunRequest {
 }
 
 export function buildDryRunRequest(
-  _config: LaConfigV2,
+  _config: LaConfig,
   resolved: ResolvedCommand,
   input: CliContextInput,
 ): DryRunRequest {

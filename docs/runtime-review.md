@@ -154,7 +154,7 @@ deno run --allow-read --allow-env --allow-net bin/la.ts quick "hello" --config e
 deno run --allow-read --allow-env --allow-net bin/la.ts command explain --selection "Hola mundo" --config examples/la.v2.json
 ```
 
-Alfred development calls should use a wrapper or resolver that first finds a local bundled helper, then `DENO_BIN`, then `deno` from the current environment, then login-shell PATH. This avoids making Alfred users debug PATH issues manually.
+Alfred development calls should use a wrapper or resolver that first finds a local bundled helper, then `LA_DENO_BIN`, then `deno` from the current environment, then login-shell PATH. This avoids making Alfred users debug PATH issues manually.
 
 ## Packaging / Distribution Strategy
 

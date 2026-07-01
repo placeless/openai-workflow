@@ -52,3 +52,16 @@ deno task quick "hello"
 
 The `quick` task passes extra arguments to `bin/la.ts`, so
 `deno task quick "hello"` runs the same dry-run path as the direct CLI command.
+
+## Batch 4 Launcher
+
+Batch 4 adds `scripts/la-core-dev.sh` as a development-only launcher around this
+CLI. The launcher is not wired into Alfred. It prefers a future compiled core
+binary when present, otherwise resolves Deno and runs:
+
+```sh
+deno run --allow-read --allow-env bin/la.ts ...
+```
+
+The Alfred adapter contract for future wiring is documented in
+`docs/alfred-adapter-v2.md`.

@@ -1,6 +1,6 @@
 import type {
   CommandConfig,
-  LaConfigV2,
+  LaConfig,
   ModelRouteConfig,
   OutputConfig,
 } from "../config/types.ts";
@@ -36,7 +36,7 @@ export interface ResolvedCommandSummary extends CommandSummary {
   tools: string[];
 }
 
-function resolveDetails(config: LaConfigV2, id: string): ResolvedCommand {
+function resolveDetails(config: LaConfig, id: string): ResolvedCommand {
   const command = config.commands[id];
   if (!command) {
     throw new LaError("UNKNOWN_COMMAND", `Command not found: ${id}`);
@@ -62,13 +62,13 @@ function resolveDetails(config: LaConfigV2, id: string): ResolvedCommand {
 }
 
 export function resolveCommand(
-  config: LaConfigV2,
+  config: LaConfig,
   id: string,
 ): ResolvedCommand {
   return resolveDetails(config, id);
 }
 
-export function resolveQuickCommand(config: LaConfigV2): ResolvedCommand {
+export function resolveQuickCommand(config: LaConfig): ResolvedCommand {
   if (config.commands.ask?.kind === "quick_ai") {
     return resolveDetails(config, "ask");
   }
@@ -84,7 +84,7 @@ export function resolveQuickCommand(config: LaConfigV2): ResolvedCommand {
   return resolveDetails(config, fallback[0]);
 }
 
-export function listCommands(config: LaConfigV2): CommandSummary[] {
+export function listCommands(config: LaConfig): CommandSummary[] {
   return Object.keys(config.commands).map((id) => {
     const resolved = resolveDetails(config, id);
     return {

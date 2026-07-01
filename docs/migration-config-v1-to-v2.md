@@ -1,8 +1,8 @@
-# Config v1 To v2 Migration Plan
+# Config v1 to v2 Migration Plan
 
 This plan is documentation-only. It describes how a future implementation can migrate the current `providers` plus `tasks` config into the v2 `providers`, `model_routes`, `commands`, `context`, `tools`, `store`, and `output` model.
 
-## Current V1 Shape
+## Current v1 Shape
 
 The current config is read from Alfred's `config` workflow variable. `scripts/resolve_config.js` loads the selected `task`, merges provider settings into that task, resolves prompt files, and emits a runtime `recipe` for `scripts/llm.js`.
 
@@ -18,7 +18,7 @@ Important v1 assumptions:
 
 ## Migration Map
 
-| V1 | V2 |
+| v1 | v2 |
 | --- | --- |
 | `providers` | `providers`, with `api_style`, `api_key_env`, `api_key`, `endpoint`, and `models`. |
 | `providers.cloudflare` | `gateways.cloudflare` when used for Cloudflare AI Gateway routing. |
@@ -34,7 +34,7 @@ Important v1 assumptions:
 
 ## Command Mapping
 
-V1 task keys map naturally to v2 command IDs:
+v1 task keys map naturally to v2 command IDs:
 
 - `ask` becomes a `quick_ai` command.
 - `explain` becomes an `ai_command`.
@@ -102,7 +102,7 @@ Example:
 
 ## Tools Migration
 
-V1 provider-native tool objects should be converted into named v2 tool IDs.
+v1 provider-native tool objects should be converted into named v2 tool IDs.
 
 Example:
 

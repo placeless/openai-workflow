@@ -4,7 +4,7 @@
 
 Please create a configuration file, such as `~/.config/alfred/la.json`, tailored to your specific needs. This configuration file should be structured into two main sections: `providers` for your Large Language Model (LLM) providers and `tasks` for the tasks you want the LLMs to perform.
 
-See [docs/architecture.md](docs/architecture.md) for the current workflow architecture and v2 refactor boundaries. The proposed v2 configuration model is documented in [docs/config-v2.md](docs/config-v2.md), with migration notes in [docs/migration-config-v1-to-v2.md](docs/migration-config-v1-to-v2.md) and runtime direction in [docs/runtime-review.md](docs/runtime-review.md).
+See [docs/architecture.md](docs/architecture.md) for the current workflow architecture and v2 refactor boundaries. The proposed v2 configuration model is documented in [docs/config-v2.md](docs/config-v2.md), with migration notes in [docs/migration-config-v1-to-v2.md](docs/migration-config-v1-to-v2.md), runtime direction in [docs/runtime-review.md](docs/runtime-review.md), the dry-run Deno skeleton in [docs/core-skeleton.md](docs/core-skeleton.md), and the future Alfred adapter contract in [docs/alfred-adapter-v2.md](docs/alfred-adapter-v2.md).
 
 Each `provider` entry should include the following:
 

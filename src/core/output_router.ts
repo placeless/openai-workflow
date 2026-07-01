@@ -1,6 +1,6 @@
 import type {
   CommandConfig,
-  LaConfigV2,
+  LaConfig,
   OutputConfig,
   ToolConfig,
 } from "../config/types.ts";
@@ -12,7 +12,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function resolveOutput(
-  config: LaConfigV2,
+  config: LaConfig,
   command: CommandConfig,
 ): OutputConfig {
   if (isRecord(command.output)) {
@@ -27,7 +27,7 @@ export function resolveOutput(
 }
 
 export function outputRequiresConfirmation(
-  config: LaConfigV2,
+  config: LaConfig,
   output: OutputConfig,
 ): boolean {
   const mode = output.mode;
@@ -43,7 +43,7 @@ export function resolveToolIds(command: CommandConfig): string[] {
 }
 
 export function toolsRequireConfirmation(
-  config: LaConfigV2,
+  config: LaConfig,
   toolIds: string[],
 ): boolean {
   const registry = config.tools?.registry ?? {};

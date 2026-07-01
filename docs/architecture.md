@@ -92,7 +92,7 @@ The v2 refactor should preserve these boundaries unless a later batch explicitly
 - Copy/history scripts read chat files but should not create provider requests.
 - Config validation reports health only; it should not mutate user configuration.
 
-## V2 Batch 1 Scope
+## La v2 Batch 1 Scope
 
 Batch 1 is documentation-only:
 
@@ -106,6 +106,10 @@ Future batches can use this document as the contract for small extractions from 
 Batch 2 adds the proposed config v2 design in `docs/config-v2.md`, the migration plan in `docs/migration-config-v1-to-v2.md`, and a strict JSON example in `examples/la.v2.json`.
 
 Batch 2.5 recommends a hybrid v2 runtime in `docs/runtime-review.md`: keep JXA as the Alfred/macOS adapter and move portable La Core responsibilities to Deno + TypeScript in a later batch.
+
+Batch 3 adds the dry-run Deno + TypeScript skeleton documented in `docs/core-skeleton.md`.
+
+Batch 4 defines the future Alfred/JXA to La Core bridge in `docs/alfred-adapter-v2.md` and adds a non-wired development launcher at `scripts/la-core-dev.sh`. It does not change the live Alfred workflow graph or existing JXA runtime.
 
 ## Verification
 

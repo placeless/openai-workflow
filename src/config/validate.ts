@@ -2,7 +2,7 @@ import { LaError } from "../core/errors.ts";
 import type {
   CommandConfig,
   JsonObject,
-  LaConfigV2,
+  LaConfig,
   OutputConfig,
 } from "./types.ts";
 
@@ -176,7 +176,7 @@ function validateCommands(config: JsonObject, errors: string[]): void {
   }
 }
 
-export function validateConfig(value: unknown): LaConfigV2 {
+export function validateConfig(value: unknown): LaConfig {
   if (!isRecord(value)) {
     throw new LaError("CONFIG_INVALID", "Config must be a JSON object");
   }
@@ -187,12 +187,12 @@ export function validateConfig(value: unknown): LaConfigV2 {
   validateCommands(value, errors);
 
   if (errors.length > 0) {
-    throw new LaError("CONFIG_INVALID", "Invalid v2 config", {
+    throw new LaError("CONFIG_INVALID", "Invalid config", {
       details: errors,
     });
   }
 
-  return value as LaConfigV2;
+  return value as LaConfig;
 }
 
 export function assertCommandConfig(

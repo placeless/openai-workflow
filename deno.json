@@ -3,7 +3,14 @@
     "strict": true
   },
   "fmt": {
-    "include": ["bin/", "src/", "tests/", "docs/core-skeleton.md", "deno.json"]
+    "include": [
+      "bin/",
+      "src/",
+      "tests/",
+      "docs/core-skeleton.md",
+      "docs/alfred-adapter-v2.md",
+      "deno.json"
+    ]
   },
   "lint": {
     "include": ["bin/", "src/", "tests/"]

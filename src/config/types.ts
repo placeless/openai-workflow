@@ -48,7 +48,7 @@ export interface OutputRegistry extends JsonObject {
   modes?: Record<string, OutputConfig>;
 }
 
-export interface LaConfigV2 extends JsonObject {
+export interface LaConfig extends JsonObject {
   version?: number;
   providers: Record<string, ProviderConfig>;
   gateways?: Record<string, JsonObject>;

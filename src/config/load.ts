@@ -1,5 +1,5 @@
 import { LaError } from "../core/errors.ts";
-import type { LaConfigV2 } from "./types.ts";
+import type { LaConfig } from "./types.ts";
 import { validateConfig } from "./validate.ts";
 
 export const DEFAULT_CONFIG_PATH = "examples/la.v2.json";
@@ -11,7 +11,7 @@ export interface LoadConfigOptions {
 
 export interface LoadedConfig {
   path: string;
-  config: LaConfigV2;
+  config: LaConfig;
 }
 
 export function resolveConfigPath(
