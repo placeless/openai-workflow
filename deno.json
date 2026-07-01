@@ -9,6 +9,8 @@
       "tests/",
       "docs/core-skeleton.md",
       "docs/alfred-adapter-v2.md",
+      "docs/adapter-harness.md",
+      "scripts/la_adapter_harness.js",
       "deno.json"
     ]
   },

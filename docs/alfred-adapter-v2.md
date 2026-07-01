@@ -17,6 +17,11 @@ The adapter contract should make these choices explicit:
 Batch 4 adds a development launcher at `scripts/la-core-dev.sh`, but the
 launcher is not wired into `info.plist`.
 
+Batch 5 adds a manual read-only harness at `scripts/la_adapter_harness.js`. It
+calls the launcher through `NSTask`, validates stdout JSON, and can render known
+core responses as Alfred Script Filter JSON. The harness is documented in
+`docs/adapter-harness.md` and is still not wired into the live workflow.
+
 ## Non-goals
 
 Batch 4 does not:
@@ -331,8 +336,9 @@ It is not referenced by `info.plist` in Batch 4.
 
 ## Future JXA adapter
 
-A later JXA adapter can call the launcher with `NSTask` and parse stdout. Its
-minimum flow should be:
+Batch 5 includes the first manual JXA harness for this flow. A later wired
+adapter can build on it, but should still start read-only. Its minimum flow
+should be:
 
 1. Build the request from Alfred variables and selected text.
 2. Convert the request to the current CLI arguments or a future JSON stdin/API.

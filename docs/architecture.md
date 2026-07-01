@@ -111,6 +111,8 @@ Batch 3 adds the dry-run Deno + TypeScript skeleton documented in `docs/core-ske
 
 Batch 4 defines the future Alfred/JXA to La Core bridge in `docs/alfred-adapter-v2.md` and adds a non-wired development launcher at `scripts/la-core-dev.sh`. It does not change the live Alfred workflow graph or existing JXA runtime.
 
+Batch 5 adds the read-only manual JXA adapter harness documented in `docs/adapter-harness.md`. The harness calls `scripts/la-core-dev.sh`, validates JSON stdout, and can produce Alfred Script Filter JSON for contract testing. It is not referenced by `info.plist` or `prefs.plist`.
+
 ## Verification
 
 Documentation-only changes do not require a manual Alfred workflow run. If runtime files change in a later batch, run:
