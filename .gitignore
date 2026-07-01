@@ -1,0 +1,45 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor state
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+config/**/*.local.json
+config/**/secrets*.json
+
+# Dependencies, caches, and generated output
+node_modules/
+coverage/
+dist/
+build/
+out/
+.cache/
+.tmp/
+
+# Alfred/runtime artifacts
+*.alfredworkflow
+Alfred.alfredpreferences/
+workflow-cache/
+workflow-data/
+chat_history/
+history/
+*.log
+
+# Local scratch space
+tmp/
+temp/

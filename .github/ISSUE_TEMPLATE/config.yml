@@ -1,1 +1,5 @@
 blank_issues_enabled: false
+contact_links:
+  - name: README and setup guide
+    url: https://github.com/placeless/La#readme
+    about: Check configuration, provider, task, and usage details before opening an issue.

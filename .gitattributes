@@ -1,0 +1,16 @@
+* text=auto eol=lf
+
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.plist text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.alfredworkflow binary
+*.gif binary
+*.icns binary
+*.jpeg binary
+*.jpg binary
+*.png binary

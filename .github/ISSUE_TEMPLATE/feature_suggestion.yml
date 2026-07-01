@@ -1,16 +1,41 @@
 name: Feature Suggestion
-description: Suggest a new feature
+description: Suggest an improvement for the La Alfred workflow
+title: "[Feature]: "
+labels:
+  - enhancement
 body:
-  - type: checkboxes
+  - type: markdown
     attributes:
-      label: "Frequently Asked Questions"
-      description: Please be sure to consult the FAQ, as most problems and advanced features are covered there.
-      options:
-        - label: I have [read the FAQ](https://www.alfredforum.com/topic/21483-chatgpt-dall-e-openai-integrations/#comment-111557) before opening the issue.
-          required: true
+      value: |
+        Please describe the workflow problem first, then the proposed behavior. Avoid including API keys, private prompts, or sensitive chat content.
   - type: textarea
+    id: problem
     attributes:
-      label: Feature details
-      description: Explain the feature idea
+      label: Problem
+      description: What is hard, missing, or inefficient today?
     validations:
       required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user-facing workflow you want La to support.
+    validations:
+      required: true
+  - type: checkboxes
+    id: entry-points
+    attributes:
+      label: Relevant entry points
+      description: Select every part of the workflow this feature would touch.
+      options:
+        - label: ask keyword
+        - label: Universal Action
+        - label: Fallback Search
+        - label: Task picker
+        - label: Chat history
+        - label: Configuration
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note any workarounds or different designs you considered.

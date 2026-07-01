@@ -1,32 +1,67 @@
 name: Bug Report
-description: File a bug report
+description: Report a problem with the La Alfred workflow
+title: "[Bug]: "
+labels:
+  - bug
 body:
-  - type: checkboxes
+  - type: markdown
     attributes:
-      label: "Frequently Asked Questions"
-      description: Please be sure to consult the FAQ, as most problems and advanced features are covered there.
-      options:
-        - label: I have [read the FAQ](https://www.alfredforum.com/topic/21483-chatgpt-dall-e-openai-integrations/#comment-111557) before opening the issue.
-          required: true
+      value: |
+        Thanks for reporting a bug. Please redact API keys, account IDs, private prompts, and any sensitive chat content before posting logs or config.
   - type: input
+    id: workflow-version
     attributes:
       label: Workflow version
       description: Open the Workflow in Alfred Preferences and find it at the top, near the description
     validations:
       required: true
   - type: input
+    id: alfred-version
     attributes:
       label: Alfred version
       description: In the top left corner of Alfred Preferences → General
     validations:
       required: true
   - type: input
+    id: macos-version
     attributes:
       label: macOS version
       description: Click  on the menubar → About This Mac
     validations:
       required: true
+  - type: dropdown
+    id: entry-point
+    attributes:
+      label: Entry point
+      description: Where did the failure happen?
+      options:
+        - ask keyword
+        - Universal Action
+        - Fallback Search
+        - Task picker
+        - Chat history
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: task-provider
+    attributes:
+      label: Task/provider
+      description: Name the task and provider involved, if known. Do not include API keys.
+      placeholder: ask / google-ai-studio
   - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the shortest sequence that shows the problem.
+      placeholder: |
+        1. Trigger `ask ...`
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: debugger-output
     attributes:
       label: Debugger output
       description: Perform the failing action with [the debugger](https://www.alfredapp.com/help/workflows/advanced/debugger/) open
@@ -34,6 +69,15 @@ body:
     validations:
       required: true
   - type: textarea
+    id: config
     attributes:
-      label: More details
-      description: Explain what you did, what happened, and what you expected to happen
+      label: Relevant config
+      description: Paste the smallest relevant config excerpt. Redact secrets.
+      render: json
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
