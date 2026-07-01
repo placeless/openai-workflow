@@ -31,9 +31,14 @@ Batch 7 connects the same `lacore` branch to one read-only Text View preview
 action. The preview script calls the harness in raw `command` mode and formats
 the dry-run JSON for display.
 
+Batch 8 extends that preview with explicit simulated context inputs. The preview
+can pass caller-provided `--selection`, `--clipboard`, `--frontmost-app`, and
+`--extra` values to the raw harness path, with optional `LA_SIM_*` development
+environment fallbacks. It still does not collect real macOS context.
+
 ## Non-goals
 
-Batch 7 does not:
+Batch 8 does not:
 
 - switch Alfred to Deno
 - modify existing live workflow behavior
@@ -173,7 +178,9 @@ config-check
 ```
 
 The CLI also accepts `--config`, `--clipboard`, `--frontmost-app`, and `--extra`
-as development-only stand-ins for future Alfred-collected context.
+as development-only stand-ins for future Alfred-collected context. The preview
+script forwards the same simulated context subset through the harness when those
+values are provided explicitly.
 
 ## Response contract
 
@@ -368,7 +375,7 @@ The first wiring batch should start with read-only `show` behavior. Mutating
 output modes such as `paste` and `replace_selection` should wait for explicit
 confirmation and focused tests.
 
-## Batch 6 and 7 Alfred entry
+## Batch 6, 7, and 8 Alfred entry
 
 The first wired entry is intentionally parallel:
 
@@ -395,9 +402,21 @@ selected command -> scripts/la_command_preview.js -> scripts/la_adapter_harness.
 
 The action shows a Text View dry-run summary with command id, kind, model route,
 output mode, tools, confirmation requirement, null context fields, and dry-run
-notes. It does not collect real selected text, clipboard, frontmost app, or
-extra context, and it does not connect to providers, copy/paste/replace, tools,
-or history writes.
+notes.
+
+Batch 8 lets that preview action accept explicit simulated context:
+
+```sh
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
+osascript -l JavaScript scripts/la_command_preview.js -- explain --frontmost-app "Safari"
+```
+
+The preview prefers argv values, then `LA_SIM_SELECTION`, `LA_SIM_CLIPBOARD`,
+`LA_SIM_FRONTMOST_APP`, and `LA_SIM_EXTRA`, then `null`. The Text View summary
+renders normalized La Core context fields such as `selection`, `clipboard`,
+`frontmost_app`, and `extra`. It does not read the real selected text,
+clipboard, or frontmost app, and it does not connect to providers,
+copy/paste/replace, tools, or history writes.
 
 To remove the dev branch, delete the `lacore` Script Filter object, the preview
 Text View object, their connection, and matching `uidata` entries from
@@ -417,11 +436,11 @@ deno test --allow-read --allow-env
 scripts/la-core-dev.sh config-check --config examples/la.v2.json
 scripts/la-core-dev.sh commands --config examples/la.v2.json
 scripts/la-core-dev.sh quick "hello" --config examples/la.v2.json
-scripts/la-core-dev.sh command explain --selection "Hola mundo" --config examples/la.v2.json
+scripts/la-core-dev.sh command explain --selection "Hola mundo" --extra "A1 learner" --config examples/la.v2.json
 
 osascript -l JavaScript scripts/la_adapter_harness.js -- --raw commands --config examples/la.v2.json
 osascript -l JavaScript scripts/la_adapter_harness.js -- commands --config examples/la.v2.json
-osascript -l JavaScript scripts/la_command_preview.js -- explain
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
 osascript -l JavaScript scripts/la_command_preview.js -- ask
 
 plutil -lint info.plist prefs.plist

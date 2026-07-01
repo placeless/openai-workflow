@@ -17,9 +17,15 @@ Batch 7 connects `lacore` to a read-only Text View preview action. Selecting a
 command runs `scripts/la_command_preview.js`, which calls the harness in raw
 mode and formats the dry-run response as readable text.
 
+Batch 8 keeps that path read-only and adds explicit simulated context to the
+preview action. The preview script can accept `--selection`, `--clipboard`,
+`--frontmost-app`, and `--extra`, then forwards those values through the raw
+harness path to La Core. These are caller-provided simulation values only; the
+preview still does not collect real macOS context.
+
 ## Non-goals
 
-Batch 7 does not:
+Batch 8 does not:
 
 - change live Alfred behavior
 - collect real macOS context
@@ -85,6 +91,43 @@ invalid JSON, raw mode returns a structured adapter error:
 
 Core errors such as `UNKNOWN_COMMAND` are preserved in raw mode.
 
+## Preview context simulation
+
+The read-only preview script accepts the same simulated context subset as the
+harness:
+
+```sh
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo"
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
+osascript -l JavaScript scripts/la_command_preview.js -- rewrite --clipboard "rough draft"
+osascript -l JavaScript scripts/la_command_preview.js -- explain --frontmost-app "Safari"
+```
+
+The preview resolves context in this order:
+
+1. argv values
+2. simulated environment values
+3. `null`
+
+The supported simulated environment variables are:
+
+- `LA_SIM_SELECTION`
+- `LA_SIM_CLIPBOARD`
+- `LA_SIM_FRONTMOST_APP`
+- `LA_SIM_EXTRA`
+
+The resulting Text View summary includes the normalized context names returned
+by La Core:
+
+```text
+Context
+- query: null
+- selection: Hola mundo
+- clipboard: null
+- frontmost_app: Safari
+- extra: A1 learner
+```
+
 ## Alfred Script Filter mode
 
 Without `--raw`, the harness converts known core responses to Alfred Script
@@ -148,9 +191,11 @@ lacore Script Filter -> scripts/la_command_preview.js -> scripts/la_adapter_harn
 ```
 
 The preview uses the item's `arg` or `variables.la_command` as the command id,
-uses `examples/la.v2.json`, and passes no selection, clipboard, frontmost app,
-or extra context. It does not connect to copy, paste, replace-selection, model
-calls, tool execution, or store writes.
+uses `examples/la.v2.json`, and can pass explicit simulated selection,
+clipboard, frontmost app, and extra context when those values are provided by
+argv or `LA_SIM_*` development variables. It does not read the real selected
+text, clipboard, or frontmost app, and it does not connect to copy, paste,
+replace-selection, model calls, tool execution, or store writes.
 
 To remove the dev entry later, delete the `info.plist` Script Filter object with
 keyword `lacore` and uid `C3A0B8B9-2A50-4B8B-AE38-76D023F68F4C`, the preview
@@ -198,7 +243,7 @@ Core launcher checks:
 scripts/la-core-dev.sh config-check --config examples/la.v2.json
 scripts/la-core-dev.sh commands --config examples/la.v2.json
 scripts/la-core-dev.sh quick "hello" --config examples/la.v2.json
-scripts/la-core-dev.sh command explain --selection "Hola mundo" --config examples/la.v2.json
+scripts/la-core-dev.sh command explain --selection "Hola mundo" --extra "A1 learner" --config examples/la.v2.json
 ```
 
 Harness raw checks:
@@ -206,7 +251,7 @@ Harness raw checks:
 ```sh
 osascript -l JavaScript scripts/la_adapter_harness.js -- --raw commands --config examples/la.v2.json
 osascript -l JavaScript scripts/la_adapter_harness.js -- --raw quick "hello" --config examples/la.v2.json
-osascript -l JavaScript scripts/la_adapter_harness.js -- --raw command explain --selection "Hola mundo" --config examples/la.v2.json
+osascript -l JavaScript scripts/la_adapter_harness.js -- --raw command explain --selection "Hola mundo" --extra "A1 learner" --config examples/la.v2.json
 ```
 
 Harness Script Filter checks:
@@ -221,6 +266,7 @@ Preview checks:
 
 ```sh
 osascript -l JavaScript scripts/la_command_preview.js -- explain
+osascript -l JavaScript scripts/la_command_preview.js -- explain --selection "Hola mundo" --extra "A1 learner"
 osascript -l JavaScript scripts/la_command_preview.js -- ask
 ```
 

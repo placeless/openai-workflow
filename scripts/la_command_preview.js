@@ -3,6 +3,24 @@
 ObjC.import("Foundation");
 
 const CONFIG_PATH = "examples/la.v2.json";
+const CONTEXT_OPTIONS = {
+  "--selection": "selection",
+  "--clipboard": "clipboard",
+  "--frontmost-app": "frontmostApp",
+  "--extra": "extra",
+};
+const CONTEXT_ENV = {
+  selection: "LA_SIM_SELECTION",
+  clipboard: "LA_SIM_CLIPBOARD",
+  frontmostApp: "LA_SIM_FRONTMOST_APP",
+  extra: "LA_SIM_EXTRA",
+};
+const CONTEXT_TO_HARNESS_OPTION = {
+  selection: "--selection",
+  clipboard: "--clipboard",
+  frontmostApp: "--frontmost-app",
+  extra: "--extra",
+};
 
 function envVar(name) {
   const value = $.NSProcessInfo.processInfo.environment.objectForKey(name);
@@ -19,6 +37,10 @@ function joinPath(base, child) {
 
 function isReadable(path) {
   return $.NSFileManager.defaultManager.isReadableFileAtPath(path);
+}
+
+function startsWithOption(value) {
+  return typeof value === "string" && value.indexOf("--") === 0;
 }
 
 function truncate(text) {
@@ -78,22 +100,87 @@ function resolveRepoRoot() {
   );
 }
 
-function commandFromArgs(argv) {
-  for (const arg of argv) {
-    if (arg !== "--" && String(arg).trim().length > 0) {
-      return String(arg).trim();
+function blankContext() {
+  return {
+    selection: null,
+    clipboard: null,
+    frontmostApp: null,
+    extra: null,
+  };
+}
+
+function parsePreviewArgs(argv, lookupEnv) {
+  const positionals = [];
+  const context = blankContext();
+  const explicitContext = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = String(argv[index]);
+    if (arg === "--") {
+      continue;
+    }
+
+    const contextField = CONTEXT_OPTIONS[arg];
+    if (contextField) {
+      const value = argv[index + 1];
+      if (value === undefined || startsWithOption(value)) {
+        throw errorPayload("PREVIEW_USAGE", `Missing value for ${arg}`);
+      }
+      context[contextField] = String(value);
+      explicitContext[contextField] = true;
+      index += 1;
+      continue;
+    }
+
+    if (startsWithOption(arg)) {
+      throw errorPayload("PREVIEW_USAGE", `Unknown preview option: ${arg}`);
+    }
+
+    const value = arg.trim();
+    if (value.length > 0) {
+      positionals.push(value);
     }
   }
 
-  const variableCommand = envVar("la_command");
-  if (variableCommand && variableCommand.trim().length > 0) {
-    return variableCommand.trim();
+  let commandId = null;
+  if (positionals.length > 0) {
+    commandId = positionals[0];
+  } else {
+    const variableCommand = lookupEnv("la_command");
+    if (variableCommand && variableCommand.trim().length > 0) {
+      commandId = variableCommand.trim();
+    }
   }
 
-  throw errorPayload(
-    "PREVIEW_MISSING_COMMAND",
-    "No La Core command id was provided by Alfred.",
-  );
+  if (!commandId) {
+    throw errorPayload(
+      "PREVIEW_MISSING_COMMAND",
+      "No La Core command id was provided by Alfred.",
+    );
+  }
+
+  for (const field of Object.keys(CONTEXT_ENV)) {
+    if (explicitContext[field]) {
+      continue;
+    }
+    const value = lookupEnv(CONTEXT_ENV[field]);
+    if (value !== undefined && value !== null) {
+      context[field] = String(value);
+    }
+  }
+
+  return { commandId, context };
+}
+
+function contextToHarnessArgs(context) {
+  const args = [];
+  for (const field of Object.keys(CONTEXT_TO_HARNESS_OPTION)) {
+    const value = context[field];
+    if (value !== undefined && value !== null) {
+      args.push(CONTEXT_TO_HARNESS_OPTION[field], String(value));
+    }
+  }
+  return args;
 }
 
 function stringFromData(data) {
@@ -107,7 +194,7 @@ function stringFromData(data) {
   return value ? value.js : "";
 }
 
-function runHarness(root, commandId) {
+function runHarness(root, commandId, contextArgs) {
   const task = $.NSTask.alloc.init;
   const stdoutPipe = $.NSPipe.pipe;
   const stderrPipe = $.NSPipe.pipe;
@@ -122,6 +209,7 @@ function runHarness(root, commandId) {
     "--raw",
     "command",
     commandId,
+    ...contextArgs,
     "--config",
     CONFIG_PATH,
   ];
@@ -253,12 +341,12 @@ function formatPreview(payload) {
     }`,
     `Config: ${CONFIG_PATH}`,
     "",
-    "Context:",
-    `- query=${displayValue(context.query)}`,
-    `- selection=${displayValue(context.selection)}`,
-    `- clipboard=${displayValue(context.clipboard)}`,
-    `- frontmost_app=${displayValue(context.frontmost_app)}`,
-    `- extra=${displayValue(context.extra)}`,
+    "Context",
+    `- query: ${displayValue(context.query)}`,
+    `- selection: ${displayValue(context.selection)}`,
+    `- clipboard: ${displayValue(context.clipboard)}`,
+    `- frontmost_app: ${displayValue(context.frontmost_app)}`,
+    `- extra: ${displayValue(context.extra)}`,
   ];
 
   if (notes.length > 0) {
@@ -269,10 +357,10 @@ function formatPreview(payload) {
 }
 
 function execute(argv) {
-  let commandId;
+  let parsed;
   let root;
   try {
-    commandId = commandFromArgs(argv);
+    parsed = parsePreviewArgs(argv, envVar);
     root = resolveRepoRoot();
   } catch (error) {
     const payload = error && error.ok === false
@@ -281,7 +369,11 @@ function execute(argv) {
     return textPayload(errorText("La Adapter Error", payload));
   }
 
-  const result = runHarness(root, commandId);
+  const result = runHarness(
+    root,
+    parsed.commandId,
+    contextToHarnessArgs(parsed.context),
+  );
   if (result.error) {
     return textPayload(errorText("La Adapter Error", result.error));
   }

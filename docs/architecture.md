@@ -127,6 +127,14 @@ dry-run summary for the selected command. It does not collect real selected
 text, clipboard, or frontmost app context, and it does not copy, paste, replace,
 write history, execute tools, stream, or call providers.
 
+Batch 8 keeps the same read-only `lacore` preview path and adds explicit
+simulated context inputs. `scripts/la_command_preview.js` can forward
+caller-provided `--selection`, `--clipboard`, `--frontmost-app`, and `--extra`
+values, or `LA_SIM_*` development fallbacks, through the raw harness to La Core.
+The core dry-run response preserves those values in the normalized `context`
+object. This still does not read real macOS context or mutate clipboard, paste,
+selection, history, tools, streams, or providers.
+
 ## Verification
 
 Documentation-only changes do not require a manual Alfred workflow run. If runtime files change in a later batch, run:

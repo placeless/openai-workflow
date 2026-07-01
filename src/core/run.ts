@@ -86,7 +86,7 @@ function configCheckOutput(loaded: LoadedConfig): ConfigCheckOutput {
 }
 
 function buildNotes(): string[] {
-  return ["Model API call skipped in Batch 3 dry-run mode."];
+  return ["Model API call skipped in dry-run mode."];
 }
 
 async function runParsed(parsed: ParsedArgs): Promise<unknown> {
