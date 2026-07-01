@@ -1,13 +1,15 @@
 # Deno Core Skeleton
 
-Batch 3 adds a minimal Deno + TypeScript La Core skeleton. It is a command-line
-dry-run runtime only; Alfred still uses the existing `info.plist` workflow graph
-and JXA scripts.
+Batch 3 adds a minimal Deno + TypeScript La Core skeleton. The default runtime
+is still command-line dry-run; Alfred still uses the existing `info.plist`
+workflow graph and JXA scripts.
 
 The skeleton validates v2 config files, resolves configured commands, builds
-normalized request objects, and prints structured JSON. It does not call model
-APIs, stream responses, run tools, read the real clipboard, inspect the
-frontmost app, migrate v1 config, or change Alfred behavior.
+normalized request objects, and prints structured JSON. Batch 11 adds an
+explicit CLI/dev-only `--no-dry-run` path for non-streaming provider calls. The
+default path still does not call model APIs, stream responses, run tools, read
+the real clipboard, inspect the frontmost app, migrate v1 config, or change
+Alfred behavior.
 
 ## Commands
 
@@ -18,6 +20,19 @@ deno run --allow-read --allow-env bin/la.ts config-check --config examples/la.v2
 deno run --allow-read --allow-env bin/la.ts commands --config examples/la.v2.json
 deno run --allow-read --allow-env bin/la.ts quick "hello" --config examples/la.v2.json
 deno run --allow-read --allow-env bin/la.ts command explain --selection "Hola mundo" --config examples/la.v2.json
+```
+
+Real provider calls require an explicit flag and network permission:
+
+```sh
+deno run --allow-read --allow-env --allow-net bin/la.ts command rewrite --selection "Hola mundo" --config examples/la.v2.json --no-dry-run
+```
+
+The development launcher grants `--allow-net` only when `--no-dry-run` is
+present:
+
+```sh
+scripts/la-core-dev.sh command rewrite --selection "Hola mundo" --config examples/la.v2.json --no-dry-run
 ```
 
 Config lookup order is:
@@ -65,3 +80,20 @@ deno run --allow-read --allow-env bin/la.ts ...
 
 The Alfred adapter contract for future wiring is documented in
 `docs/alfred-adapter-v2.md`.
+
+## Batch 11 Provider Adapter
+
+Batch 11 adds the first small provider adapter layer for CLI/dev-only use. It
+supports OpenAI-compatible chat completions routes from the v2 config, resolves
+API keys from `api_key_env` or existing config references, builds a minimal
+system/user prompt, and returns a structured `model_response` JSON payload.
+
+Dry-run remains default and includes the skipped-model-call note. Existing
+Alfred production commands, the `lacore` Script Filter, and the
+`La Core Preview
+Selection` Universal Action remain dry-run unless a later batch
+explicitly changes that wiring.
+
+Batch 11 still does not stream responses, execute tools, write store/history,
+handle MCP, handle embeddings, copy, paste, replace selection, migrate real user
+config, or fix Alfred Universal Action clipboard behavior.

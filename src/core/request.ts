@@ -18,11 +18,21 @@ export interface DryRunRequest {
   dry_run: true;
 }
 
-export function buildDryRunRequest(
-  _config: LaConfig,
+export interface ModelRunRequest {
+  entry: string;
+  command: string;
+  message: string | null;
+  context: NormalizedContext;
+  model_route: ({ id: string } & ModelRouteConfig) | Record<string, never>;
+  tools: string[];
+  output: OutputConfig;
+  dry_run: false;
+}
+
+function buildBaseRequest(
   resolved: ResolvedCommand,
   input: CliContextInput,
-): DryRunRequest {
+): Omit<DryRunRequest, "dry_run"> {
   const context = normalizeCliContext(input);
   const modelRoute = resolved.modelRouteId && resolved.modelRoute
     ? { id: resolved.modelRouteId, ...resolved.modelRoute }
@@ -36,6 +46,27 @@ export function buildDryRunRequest(
     model_route: modelRoute,
     tools: [...resolved.tools],
     output: { ...resolved.output },
+  };
+}
+
+export function buildDryRunRequest(
+  _config: LaConfig,
+  resolved: ResolvedCommand,
+  input: CliContextInput,
+): DryRunRequest {
+  return {
+    ...buildBaseRequest(resolved, input),
     dry_run: true,
+  };
+}
+
+export function buildModelRunRequest(
+  _config: LaConfig,
+  resolved: ResolvedCommand,
+  input: CliContextInput,
+): ModelRunRequest {
+  return {
+    ...buildBaseRequest(resolved, input),
+    dry_run: false,
   };
 }

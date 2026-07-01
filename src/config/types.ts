@@ -5,7 +5,10 @@ export type PromptConfig = string | JsonObject | null;
 export interface ProviderConfig extends JsonObject {
   api_style?: string;
   endpoint?: string;
+  api_key_env?: string;
+  api_key?: string;
   models?: Record<string, string>;
+  default_headers?: Record<string, string>;
 }
 
 export interface ModelRouteConfig extends JsonObject {

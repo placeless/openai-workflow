@@ -46,6 +46,12 @@ Provider fields:
 - `default_headers`: Optional static headers for OpenAI-compatible services.
 - `gateway`: Optional Cloudflare AI Gateway routing by default for this provider.
 
+Batch 11 runtime support is intentionally narrower than the full design: real
+provider calls are CLI/dev-only, non-streaming, and support OpenAI-compatible
+chat completions routes first. API keys must resolve from environment variables
+such as `api_key_env` or an existing config reference; example configs must not
+hardcode secrets.
+
 Cloudflare AI Gateway should be modeled as routing metadata, not as a normal model provider. A route or provider may opt into a gateway by name.
 
 ```json

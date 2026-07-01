@@ -1,6 +1,12 @@
 import { loadConfig } from "../config/load.ts";
 import type { LoadedConfig } from "../config/load.ts";
-import { buildDryRunRequest } from "./request.ts";
+import {
+  callModelProvider,
+  type FetchLike,
+  resolveModelProviderRoute,
+} from "./model_provider.ts";
+import { buildModelPrompt } from "./prompt.ts";
+import { buildDryRunRequest, buildModelRunRequest } from "./request.ts";
 import {
   listCommands,
   resolveCommand,
@@ -13,6 +19,7 @@ interface ParsedArgs {
   positionals: string[];
   options: {
     config?: string;
+    noDryRun?: boolean;
     selection?: string;
     clipboard?: string;
     frontmostApp?: string;
@@ -27,6 +34,11 @@ interface ConfigCheckOutput {
   version: number;
 }
 
+interface RunOptions {
+  env?: Record<string, string | undefined>;
+  fetch?: FetchLike;
+}
+
 function parseArgs(args: string[]): ParsedArgs {
   const positionals: string[] = [];
   const options: ParsedArgs["options"] = {};
@@ -35,6 +47,11 @@ function parseArgs(args: string[]): ParsedArgs {
     const arg = args[index];
     if (!arg.startsWith("--")) {
       positionals.push(arg);
+      continue;
+    }
+
+    if (arg === "--no-dry-run") {
+      options.noDryRun = true;
       continue;
     }
 
@@ -68,8 +85,14 @@ function parseArgs(args: string[]): ParsedArgs {
   return { positionals, options };
 }
 
-async function loadFromArgs(parsed: ParsedArgs): Promise<LoadedConfig> {
-  return await loadConfig({ configPath: parsed.options.config });
+async function loadFromArgs(
+  parsed: ParsedArgs,
+  options: RunOptions,
+): Promise<LoadedConfig> {
+  return await loadConfig({
+    configPath: parsed.options.config,
+    env: options.env,
+  });
 }
 
 function printJson(payload: unknown): void {
@@ -89,13 +112,16 @@ function buildNotes(): string[] {
   return ["Model API call skipped in dry-run mode."];
 }
 
-async function runParsed(parsed: ParsedArgs): Promise<unknown> {
+async function runParsed(
+  parsed: ParsedArgs,
+  options: RunOptions,
+): Promise<unknown> {
   const [mode, ...rest] = parsed.positionals;
   if (!mode) {
     throw new LaError("CLI_USAGE", "Missing command");
   }
 
-  const loaded = await loadFromArgs(parsed);
+  const loaded = await loadFromArgs(parsed, options);
 
   switch (mode) {
     case "config-check":
@@ -113,12 +139,18 @@ async function runParsed(parsed: ParsedArgs): Promise<unknown> {
         throw new LaError("CLI_USAGE", "quick requires a message");
       }
       const resolved = resolveQuickCommand(loaded.config);
-      const request = buildDryRunRequest(loaded.config, resolved, {
+      const input = {
         query,
         selection: parsed.options.selection,
         clipboard: parsed.options.clipboard,
         frontmostApp: parsed.options.frontmostApp,
         extra: parsed.options.extra,
+      };
+      if (parsed.options.noDryRun) {
+        return await runModelCall(loaded, resolved, input, options);
+      }
+      const request = buildDryRunRequest(loaded.config, resolved, {
+        ...input,
       });
       return {
         ok: true,
@@ -135,13 +167,17 @@ async function runParsed(parsed: ParsedArgs): Promise<unknown> {
       }
       const resolved = resolveCommand(loaded.config, commandId);
       const query = messageParts.join(" ").trim() || null;
-      const request = buildDryRunRequest(loaded.config, resolved, {
+      const input = {
         query,
         selection: parsed.options.selection,
         clipboard: parsed.options.clipboard,
         frontmostApp: parsed.options.frontmostApp,
         extra: parsed.options.extra,
-      });
+      };
+      if (parsed.options.noDryRun) {
+        return await runModelCall(loaded, resolved, input, options);
+      }
+      const request = buildDryRunRequest(loaded.config, resolved, input);
       return {
         ok: true,
         mode: "dry_run",
@@ -155,8 +191,40 @@ async function runParsed(parsed: ParsedArgs): Promise<unknown> {
   }
 }
 
-export async function run(args: string[]): Promise<unknown> {
-  return await runParsed(parseArgs(args));
+async function runModelCall(
+  loaded: LoadedConfig,
+  resolved: ReturnType<typeof resolveCommand>,
+  input: Parameters<typeof buildModelRunRequest>[2],
+  options: RunOptions,
+): Promise<unknown> {
+  const request = buildModelRunRequest(loaded.config, resolved, input);
+  const route = resolveModelProviderRoute(loaded.config, resolved);
+  const prompt = await buildModelPrompt(resolved, request.context, {
+    configPath: loaded.path,
+  });
+  const response = await callModelProvider(route, prompt, {
+    env: options.env,
+    fetch: options.fetch,
+  });
+
+  return {
+    ok: true,
+    mode: "model_response",
+    request,
+    resolved_command: summarizeResolvedCommand(resolved),
+    model: {
+      provider: route.provider,
+      model: route.model,
+    },
+    response,
+  };
+}
+
+export async function run(
+  args: string[],
+  options: RunOptions = {},
+): Promise<unknown> {
+  return await runParsed(parseArgs(args), options);
 }
 
 export async function main(args: string[]): Promise<number> {

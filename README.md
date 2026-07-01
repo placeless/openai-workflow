@@ -5,6 +5,7 @@
 Please create a configuration file, such as `~/.config/alfred/la.json`, tailored to your specific needs. This configuration file should be structured into two main sections: `providers` for your Large Language Model (LLM) providers and `tasks` for the tasks you want the LLMs to perform.
 
 See [docs/architecture.md](docs/architecture.md) for the current workflow architecture and v2 refactor boundaries. The proposed v2 configuration model is documented in [docs/config-v2.md](docs/config-v2.md), with migration notes in [docs/migration-config-v1-to-v2.md](docs/migration-config-v1-to-v2.md), runtime direction in [docs/runtime-review.md](docs/runtime-review.md), the dry-run Deno skeleton in [docs/core-skeleton.md](docs/core-skeleton.md), the future Alfred adapter contract in [docs/alfred-adapter-v2.md](docs/alfred-adapter-v2.md), and the read-only adapter harness in [docs/adapter-harness.md](docs/adapter-harness.md).
+The first dev-only model provider adapter is documented in [docs/model-provider-adapter.md](docs/model-provider-adapter.md).
 
 Each `provider` entry should include the following:
 
@@ -177,17 +178,26 @@ preview through `scripts/la_selection_preview.js`:
 osascript -l JavaScript scripts/la_selection_preview.js -- "Hola mundo"
 ```
 
+The CLI/dev launcher can opt into a non-streaming OpenAI-compatible provider
+call with `--no-dry-run`. Dry-run is still the default, and the Alfred `lacore`
+Script Filter plus `La Core Preview Selection` Universal Action do not pass this
+flag:
+
+```sh
+scripts/la-core-dev.sh command rewrite --selection "Hola mundo" --config examples/la.v2.json --no-dry-run
+```
+
 This entry is parallel to the existing workflow. It does not replace `ask`,
-`chat`, `explain`, or `translate`; it does not call providers, stream, execute
-tools, collect selected text by simulating keyboard shortcuts, intentionally
-write to the clipboard, paste/copy/replace text, write history, or migrate the
-real user config. The Universal Action branch does not read clipboard or
-frontmost app metadata. Clipboard and frontmost app reads are opt-in manual
-preview-only probe actions, and selected text must come from Alfred input,
-explicit argv, or development fallbacks. To remove the dev branches, delete the
-isolated `lacore` Script Filter object, the `La Core Preview Selection`
-Universal Action, their preview Text View objects, connections, and matching
-`uidata` entries from `info.plist`.
+`chat`, `explain`, or `translate`; the Alfred dev entries do not call
+providers, stream, execute tools, collect selected text by simulating keyboard
+shortcuts, intentionally write to the clipboard, paste/copy/replace text, write
+history, or migrate the real user config. The Universal Action branch does not
+read clipboard or frontmost app metadata. Clipboard and frontmost app reads are
+opt-in manual preview-only probe actions, and selected text must come from
+Alfred input, explicit argv, or development fallbacks. To remove the dev
+branches, delete the isolated `lacore` Script Filter object, the `La Core
+Preview Selection` Universal Action, their preview Text View objects,
+connections, and matching `uidata` entries from `info.plist`.
 
 ### Clipboard Safety Notes
 

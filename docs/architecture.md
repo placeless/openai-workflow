@@ -173,6 +173,17 @@ requested. Alfred's Universal Action selected-text path may change the system
 clipboard and/or record selected text in Alfred Clipboard History, outside La's
 control.
 
+Batch 11 adds a CLI/dev-only model provider adapter path to La Core. The
+default remains dry-run. Passing `--no-dry-run` through `scripts/la-core-dev.sh`
+allows a non-streaming OpenAI-compatible chat completions call for model-callable
+commands whose route resolves to a supported provider. API keys come from
+environment variables or existing config references. The launcher grants Deno
+network permission only for this explicit real-call flag. Existing Alfred
+production branches, the dev `lacore` Script Filter, and the `La Core Preview
+Selection` Universal Action remain dry-run and do not execute tools, write
+history/store, mutate clipboard, paste, copy, replace selection, stream, handle
+MCP, or handle embeddings.
+
 ## Verification
 
 Documentation-only changes do not require a manual Alfred workflow run. If runtime files change in a later batch, run:

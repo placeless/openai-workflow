@@ -97,4 +97,16 @@ if [[ -z "$deno_bin" ]]; then
   exit 127
 fi
 
-exec "$deno_bin" run --allow-read --allow-env bin/la.ts "$@"
+real_call=0
+for arg in "$@"; do
+  if [[ "$arg" == "--no-dry-run" ]]; then
+    real_call=1
+  fi
+done
+
+deno_permissions=(--allow-read --allow-env)
+if [[ "$real_call" -eq 1 ]]; then
+  deno_permissions+=(--allow-net)
+fi
+
+exec "$deno_bin" run "${deno_permissions[@]}" bin/la.ts "$@"
